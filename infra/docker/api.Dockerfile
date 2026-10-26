@@ -19,12 +19,9 @@ RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir -e /packages/matching-engine \
     && pip install --no-cache-dir -e /packages/shared-types
 
-# Copy API configuration and dependencies
-COPY apps/api/pyproject.toml /app/pyproject.toml
-RUN pip install --no-cache-dir -e /app
-
-# Copy application source code
+# Copy application source code and install
 COPY apps/api /app
+RUN pip install --no-cache-dir -e /app
 
 # Run as non-root user
 RUN addgroup --gid 1001 praansetu && \

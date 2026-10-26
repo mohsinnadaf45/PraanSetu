@@ -31,7 +31,7 @@ dependencies = [
     "python-multipart==0.0.9",
     "email-validator==2.2.0",
     "structlog==24.4.0",
-    "praansetu-matching @ file:///${PROJECT_ROOT}/packages/matching-engine",
+    "praansetu-matching>=0.1.0",
 ]
 
 [project.optional-dependencies]
