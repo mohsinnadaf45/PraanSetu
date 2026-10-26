@@ -1,0 +1,10 @@
+node_modules/
+.next/
+out/
+.env.local
+.env.*.local
+*.tsbuildinfo
+
+# Ensure src/lib is not ignored by root python lib/ rule
+!src/lib/
+!src/lib/**
