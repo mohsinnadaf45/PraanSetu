@@ -1,0 +1,11 @@
+{
+  "name": "@praansetu/shared-types",
+  "version": "0.1.0",
+  "description": "Shared TypeScript and domain definitions for PraanSetu",
+  "main": "index.ts",
+  "types": "index.ts",
+  "private": true,
+  "scripts": {
+    "type-check": "tsc --noEmit"
+  }
+}

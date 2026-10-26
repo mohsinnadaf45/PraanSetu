@@ -1,0 +1,43 @@
+# Kidney v1 — Matching rules (DRAFT — requires medical board review before any real use)
+#
+# This file is hashed and stored in the rule_version table so changes are tracked.
+# To update: edit this file, run the migration to create a new rule_version row with
+# the new hash, and get approval before setting effective_from.
+
+organ: kidney
+version: v1
+approved: false  # Set to true after medical board review
+
+description: >
+  First version of kidney allocation rules for PraanSetu.
+  Weights are placeholders; a transplant nephrologist must review
+  before any real patient data is used.
+
+weights:
+  # All weights must sum to 1.0
+  urgency: 0.40        # Medical urgency (1–5 scale)
+  hla: 0.30            # HLA antigen match (A, B, DR loci)
+  waiting_time: 0.20   # Time on the waiting list
+  distance: 0.05       # Geographic proximity (ischaemia time)
+  pediatric: 0.05      # Paediatric recipient priority
+
+hard_filters:
+  - name: blood_group_abo
+    description: ABO compatibility (donor can donate to recipient blood group)
+    rule: is_blood_group_compatible(donor.blood_group, recipient.blood_group)
+    excludes_if: incompatible
+
+  - name: crossmatch
+    description: A positive crossmatch is an absolute contraindication
+    rule: donor.test_results.crossmatch != "positive"
+    excludes_if: positive
+
+  - name: size
+    description: Organ weight must be within 30% of recipient expected weight
+    rule: abs(donor.size_kg - recipient.size_kg) / max(donor.size_kg, recipient.size_kg) <= 0.30
+    excludes_if: out_of_range
+
+notes:
+  - Distance scoring uses haversine formula; GPS coordinates must be added later.
+  - PRA (Panel Reactive Antibody) matching is not yet scored; add in v2.
+  - Dialysis vintage and prior transplants should be added in v2.

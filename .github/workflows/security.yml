@@ -1,0 +1,36 @@
+name: Backend Security Scans
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "0 4 * * 1"  # Every Monday at 04:00 UTC
+
+jobs:
+  audit:
+    name: Dependency & Static Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install security linters
+        run: |
+          pip install --upgrade pip
+          pip install pip-audit bandit[toml]
+
+      - name: Audit dependencies for known CVEs
+        run: |
+          pip-audit --requirement <(pip install -e packages/matching-engine -e apps/api --dry-run) || true
+
+      - name: Run Bandit AST Security Analysis
+        run: |
+          bandit -r apps/api/app packages/matching-engine/src -ll -q

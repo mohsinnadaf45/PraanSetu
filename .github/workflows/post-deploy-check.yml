@@ -1,0 +1,34 @@
+name: Post-Deploy Verification
+
+on:
+  workflow_dispatch:
+    inputs:
+      api_url:
+        description: "Target API base URL (e.g. https://api.praansetu.in)"
+        required: true
+        default: "https://api.praansetu.in"
+
+jobs:
+  smoke-test:
+    name: API Health & Contract Smoke Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Ping API Healthcheck
+        run: |
+          API_URL="${{ github.event.inputs.api_url }}"
+          echo "Pinging ${API_URL}/health..."
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${API_URL}/health")
+          if [ "$STATUS" -ne 200 ]; then
+            echo "API healthcheck failed with HTTP ${STATUS}"
+            exit 1
+          fi
+          echo "API is healthy (HTTP 200)"
+
+      - name: Verify Security Response Headers
+        run: |
+          API_URL="${{ github.event.inputs.api_url }}"
+          HEADERS=$(curl -s -I "${API_URL}/health")
+          echo "$HEADERS" | grep -i "x-content-type-options: nosniff" || (echo "Missing X-Content-Type-Options" && exit 1)
+          echo "$HEADERS" | grep -i "x-frame-options: DENY" || (echo "Missing X-Frame-Options" && exit 1)
+          echo "Security headers verified successfully."

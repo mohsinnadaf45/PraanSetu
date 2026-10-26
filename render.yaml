@@ -1,0 +1,98 @@
+# Render Blueprint: defines all backend services for PraanSetu
+# Deploy by connecting this repo to Render and pointing to this file.
+
+services:
+  # ── API Web Service ───────────────────────────────────────────
+  - type: web
+    name: praansetu-api
+    runtime: docker
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: .
+    region: singapore  # Closest to India; review for DPDP Act compliance
+    plan: standard
+    healthCheckPath: /health
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: praansetu-main-db
+          property: connectionString
+      - key: VAULT_DATABASE_URL
+        fromDatabase:
+          name: praansetu-vault-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: praansetu-redis
+          type: redis
+          property: connectionString
+      - key: CELERY_BROKER_URL
+        fromService:
+          name: praansetu-redis
+          type: redis
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: VAULT_ENCRYPTION_KEY
+        sync: false   # Set manually in Render dashboard
+      - key: SENTRY_DSN
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+
+  # ── Celery Worker ─────────────────────────────────────────────
+  - type: worker
+    name: praansetu-worker
+    runtime: docker
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: .
+    startCommand: celery -A app.workers.celery_app worker --loglevel=info
+    region: singapore
+    plan: standard
+    envVars:
+      - fromGroup: praansetu-env
+
+  # ── Celery Beat (Scheduled Jobs) ──────────────────────────────
+  - type: cron
+    name: praansetu-beat
+    runtime: docker
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: .
+    schedule: "0 * * * *"  # Every hour; actual scheduling managed by Celery beat
+    startCommand: celery -A app.workers.celery_app beat --loglevel=info
+    region: singapore
+    plan: starter
+    envVars:
+      - fromGroup: praansetu-env
+
+databases:
+  # ── Main Database ────────────────────────────────────────────
+  - name: praansetu-main-db
+    databaseName: praansetu_main
+    user: praansetu
+    plan: standard
+    region: singapore
+
+  # ── Identity Vault Database ──────────────────────────────────
+  - name: praansetu-vault-db
+    databaseName: praansetu_vault
+    user: vault_user
+    plan: standard
+    region: singapore
+
+  # ── Redis ────────────────────────────────────────────────────
+  - name: praansetu-redis
+    type: redis
+    plan: standard
+    region: singapore
+
+envVarGroups:
+  - name: praansetu-env
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: CELERY_RESULT_BACKEND
+        sync: false

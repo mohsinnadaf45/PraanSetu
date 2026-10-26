@@ -1,0 +1,114 @@
+[
+  {
+    "scenario_name": "Case 1: Pediatric Patient Priority with Compatible ABO",
+    "description": "Pediatric candidate (<18) should rank higher than an adult candidate with similar waiting time and urgency when all filters pass.",
+    "donor": {
+      "donor_code": "D-CLIN-001",
+      "organ": "kidney",
+      "blood_group": "O+",
+      "size_kg": 46.0,
+      "age_years": 16,
+      "hospital_lat": 18.5204,
+      "hospital_lon": 73.8567,
+      "test_results": {"crossmatch": "negative", "hla": {"A": ["02", "24"], "B": ["07", "40"], "DR": ["04", "15"]}}
+    },
+    "recipients": [
+      {
+        "recipient_code": "R-ADULT-001",
+        "organ": "kidney",
+        "blood_group": "O+",
+        "size_kg": 50.0,
+        "age_years": 45,
+        "urgency": 3,
+        "listed_days_ago": 365,
+        "hospital_lat": 18.5300,
+        "hospital_lon": 73.8600,
+        "hla": {"A": ["02", "01"], "B": ["07", "08"], "DR": ["04", "07"]}
+      },
+      {
+        "recipient_code": "R-PEDIATRIC-001",
+        "organ": "kidney",
+        "blood_group": "O+",
+        "size_kg": 42.0,
+        "age_years": 12,
+        "urgency": 3,
+        "listed_days_ago": 365,
+        "hospital_lat": 18.5300,
+        "hospital_lon": 73.8600,
+        "hla": {"A": ["02", "01"], "B": ["07", "08"], "DR": ["04", "07"]}
+      }
+    ],
+    "expected_top_recipient": "R-PEDIATRIC-001"
+  },
+  {
+    "scenario_name": "Case 2: ABO Incompatible Candidate Exclusion",
+    "description": "Recipient with blood group B is incompatible with donor blood group A and must be hard-filtered out.",
+    "donor": {
+      "donor_code": "D-CLIN-002",
+      "organ": "kidney",
+      "blood_group": "A+",
+      "size_kg": 70.0,
+      "age_years": 40,
+      "hospital_lat": 19.0760,
+      "hospital_lon": 72.8777,
+      "test_results": {"crossmatch": "negative", "hla": {"A": ["01", "03"], "B": ["08", "35"], "DR": ["03", "11"]}}
+    },
+    "recipients": [
+      {
+        "recipient_code": "R-INCOMPAT-001",
+        "organ": "kidney",
+        "blood_group": "B+",
+        "size_kg": 70.0,
+        "age_years": 38,
+        "urgency": 5,
+        "listed_days_ago": 900,
+        "hospital_lat": 19.0760,
+        "hospital_lon": 72.8777,
+        "hla": {"A": ["01", "03"], "B": ["08", "35"], "DR": ["03", "11"]}
+      },
+      {
+        "recipient_code": "R-COMPAT-001",
+        "organ": "kidney",
+        "blood_group": "A+",
+        "size_kg": 72.0,
+        "age_years": 50,
+        "urgency": 2,
+        "listed_days_ago": 180,
+        "hospital_lat": 19.0760,
+        "hospital_lon": 72.8777,
+        "hla": {"A": ["02", "24"], "B": ["07", "40"], "DR": ["04", "15"]}
+      }
+    ],
+    "expected_top_recipient": "R-COMPAT-001",
+    "expected_excluded_recipients": ["R-INCOMPAT-001"]
+  },
+  {
+    "scenario_name": "Case 3: Positive Crossmatch Exclusion",
+    "description": "When donor crossmatch test results are positive, all candidates are excluded by hard crossmatch filter.",
+    "donor": {
+      "donor_code": "D-CLIN-003",
+      "organ": "kidney",
+      "blood_group": "O+",
+      "size_kg": 68.0,
+      "age_years": 29,
+      "hospital_lat": 28.6139,
+      "hospital_lon": 77.2090,
+      "test_results": {"crossmatch": "positive"}
+    },
+    "recipients": [
+      {
+        "recipient_code": "R-CANDIDATE-001",
+        "organ": "kidney",
+        "blood_group": "O+",
+        "size_kg": 67.0,
+        "age_years": 33,
+        "urgency": 4,
+        "listed_days_ago": 200,
+        "hospital_lat": 28.6139,
+        "hospital_lon": 77.2090
+      }
+    ],
+    "expected_all_excluded": true,
+    "expected_excluded_recipients": ["R-CANDIDATE-001"]
+  }
+]

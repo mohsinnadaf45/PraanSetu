@@ -1,775 +1,450 @@
-# Business Listing Consistency Agent: Architecture Document
+# PraanSetu: Architecture
 
-> **Scope:** End-to-end system design covering data flow, component responsibilities, the complete monorepo directory structure, and per-module breakdowns for every layer of the stack.
+This document explains how PraanSetu is built: the big picture, the technology stack, how each part works, and the full folder structure of the project. It follows the PRD and README.
 
----
-
-## Table of Contents
-
-1. [System Overview](#1-system-overview)
-2. [Data Flow Architecture](#2-data-flow-architecture)
-3. [Full Directory Structure](#3-full-directory-structure)
-4. [Module Breakdowns](#4-module-breakdowns)
-   - 4.1 [Backend: Express API](#41-backend-express-api)
-   - 4.2 [AI Agent Layer](#42-ai-agent-layer)
-   - 4.3 [Normalization and Detection](#43-normalization-and-detection)
-   - 4.4 [Mock Listing Platforms](#44-mock-listing-platforms)
-   - 4.5 [Frontend: React on Vercel](#45-frontend-react-on-vercel)
-   - 4.6 [Database Layer](#46-database-layer)
-   - 4.7 [Auth and Permissions](#47-auth-and-permissions)
-   - 4.8 [Background Jobs](#48-background-jobs)
-5. [Inter-Service Communication](#5-inter-service-communication)
-6. [Security Architecture](#6-security-architecture)
-7. [Deployment Architecture](#7-deployment-architecture)
+> Status: planning and prototype stage. Use fake data only until legal and medical review is done.
 
 ---
 
-## 1. System Overview
-
-The Business Listing Consistency Agent is a **monorepo** with three deployable apps and one shared package:
-
-| Domain | Stack | Hosting | Responsibility |
-|---|---|---|---|
-| **Frontend** | React, TypeScript, Vite, Tailwind CSS, TanStack Query | Vercel | Owner dashboard: profile editor, mismatch review, approvals, simulator, reports, audit log, alerts |
-| **Backend API** | Node.js 20, Express, TypeScript, Prisma, Zod | Render (Web Service) | REST endpoints, business logic, agent orchestration, scheduled re-checks |
-| **Mock Platforms** | Express, TypeScript, seeded JSON | Render (Web Service) | Simulated listing sites with their own permission rules |
-| **Shared Package** | TypeScript, Zod | Built into api and web | Shared types, schemas, and status constants |
-
-Supporting services:
-- **PostgreSQL** (Render Managed PostgreSQL) stores profiles, listings, mismatches, proposals, update results, verifications, and the audit log.
-- **Claude API** (Anthropic SDK) powers the conflict investigator, holiday reasoning, and correction proposals through tool use.
-- **Render Cron Job** runs scheduled re-checks.
+## 1. Architecture in one picture
 
 ```
-┌──────────────────────────────────────────────────────────────────────────────┐
-│                               OWNER (Browser)                                 │
-└───────────────────────────────────────┬──────────────────────────────────────┘
-                                        │  HTTPS (REST, cookie auth)
-┌───────────────────────────────────────▼──────────────────────────────────────┐
-│                     FRONTEND · Vercel                                         │
-│        React · TypeScript · Vite · Tailwind · TanStack Query                  │
-│        Pages: Profile · Dashboard · Approvals · Simulator · Report · Audit    │
-└───────────────────────────────────────┬──────────────────────────────────────┘
-                                        │  HTTPS REST (VITE_API_BASE_URL)
-┌───────────────────────────────────────▼──────────────────────────────────────┐
-│                     BACKEND API · Render (Web Service)                        │
-│        Express · TypeScript · Zod validation · Auth middleware · CORS         │
-│                                                                              │
-│   ┌─────────────┐  ┌──────────────┐  ┌──────────────┐  ┌─────────────────┐   │
-│   │  Profile &  │  │  Mismatch &  │  │  Proposal &  │  │  Score, Audit,  │   │
-│   │  Listings   │  │  Normalize   │  │  Approval    │  │  Alerts         │   │
-│   │  Services   │  │  Services    │  │  Services    │  │  Services       │   │
-│   └──────┬──────┘  └──────┬───────┘  └──────┬───────┘  └────────┬────────┘   │
-│          └────────────────┴─────────┬───────┴───────────────────┘            │
-│                                     │                                        │
-│                     ┌───────────────▼────────────────┐                       │
-│                     │      AI Agent Layer            │                       │
-│                     │  Claude API · Tool use ·       │                       │
-│                     │  Guardrails · Structured output│                       │
-│                     └───────────────┬────────────────┘                       │
-│                                     │                                        │
-│   ┌─────────────────────────────────┴───────────────────────────────┐        │
-│   │  Background Jobs (Render Cron): scheduled re-checks             │        │
-│   └─────────────────────────────────────────────────────────────────┘        │
-└───────┬──────────────────────────────────────────────────┬───────────────────┘
-        │ Prisma (TCP)                                     │ HTTP (fetch / PATCH)
-┌───────▼──────────────────────────┐        ┌──────────────▼───────────────────┐
-│  PostgreSQL · Render Managed     │        │  MOCK PLATFORMS · Render          │
-│  profiles · listings · mismatches│        │  mock-maps-a (read-write)         │
-│  proposals · updates · audit     │        │  mock-maps-b (read-only)          │
-└──────────────────────────────────┘        │  mock-directory-c (holiday block) │
-                                            └──────────────────────────────────┘
+                        ┌───────────────────────────────┐
+                        │  Users (browser / phone)      │
+                        │  doctor, coordinator, auditor │
+                        └──────────────┬────────────────┘
+                                       │ HTTPS (TLS)
+                              ┌────────▼────────┐
+                              │  Host edge      │  TLS by Vercel and Render
+                              └───┬─────────┬───┘
+                                  │         │
+                    ┌─────────────▼──┐   ┌──▼──────────────────┐
+                    │  Web app       │   │  API server         │
+                    │  Next.js VERCEL│──▶│  FastAPI  RENDER    │
+                    │  (screens)     │   │  auth, roles, rules │
+                    └────────────────┘   └──┬────┬────┬────┬───┘
+                                            │    │    │    │
+              ┌─────────────────────────────┘    │    │    └───────────────────────┐
+              │                                  │    │                            │
+   ┌──────────▼─────────┐            ┌───────────▼┐  ┌▼───────────────┐   ┌────────▼────────┐
+   │ Matching engine    │            │ Main DB    │  │ Identity vault │   │ Audit log       │
+   │ (pure Python lib)  │            │ PostgreSQL │  │ PostgreSQL     │   │ hash-chained,   │
+   │ filters + scoring  │            │ anonymous  │  │ separate,      │   │ append-only     │
+   │ rules from YAML    │            │ medical    │  │ encrypted      │   │ table           │
+   └────────────────────┘            │ data       │  │ names, phones  │   └────────┬────────┘
+                                     └────────────┘  └───────▲────────┘            │
+                                                             │                     │ checkpoint
+                                                    ┌────────┴───────┐     ┌───────▼────────┐
+                                                    │ Key manager    │     │ External       │
+                                                    │ (KMS / Vault)  │     │ checkpoint     │
+                                                    └────────────────┘     │ store          │
+                                                                           └────────────────┘
+
+   ┌──────────────────────────────────────────────────────────────────────────────┐
+   │ Background workers (Celery + Redis): offer timers, notifications, checkpoints │
+   └──────────────────────────────────────────────────────────────────────────────┘
 ```
+
+**How to read it.** The web app is hosted on Vercel; the API, workers, databases and Redis are hosted on Render. The browser talks only to the web app and API. The API is the only part that touches the databases. The matching engine is a separate library with no database access, so it is easy to test and audit. The identity vault is a different database with different keys, so one leak does not reveal everything.
 
 ---
 
-## 2. Data Flow Architecture
+## 2. Technology stack
 
-```
-Step 1: PROFILE
-  Owner saves approved profile (name, address, phone, regular hours, holiday hours)
-    ──► Zod validation ──► profile.service ──► BusinessProfile (PostgreSQL)
-    ──► audit.service records the change
+| Layer | Choice | Why |
+| --- | --- | --- |
+| Front end | Next.js + TypeScript | Fast pages, strong typing, easy role-based screens |
+| Styling | Tailwind CSS with custom design tokens (no UI kit defaults) | Gives the calm, non-template look in the PRD |
+| Tables and forms | TanStack Table, React Hook Form, Zod | Tables are the core screen; strict form checking |
+| Front end state and data | TanStack Query | Simple server data and caching |
+| Fonts | A serif for headings, a sans for body, a mono for anonymous codes (self-hosted) | Readable, and codes like `R-4F7A91` are easy to compare |
+| API server | Python 3.12 + FastAPI | Clear, fast, automatic API docs |
+| Data checks | Pydantic v2 | Strict input and output rules |
+| Database access | SQLAlchemy 2 + Alembic migrations | Safe queries and versioned schema changes |
+| Main database | PostgreSQL 16 | Reliable, supports row-level security and triggers |
+| Identity vault | Separate PostgreSQL instance, field-level encryption | Keeps real identity apart from medical data |
+| Background jobs | Celery + Redis | Offer countdowns, notifications, log checkpoints |
+| Authentication | JWT sessions + TOTP multi-factor (pyotp), password hashing with Argon2 | Strong login without heavy setup |
+| Permissions | Role-based access control (RBAC) in the API, plus Postgres row-level security | Two layers of protection |
+| Encryption | TLS in transit, AES-256 at rest, envelope encryption with an external key manager (AWS KMS, Mumbai region); Render only holds the access credentials as secrets | Standard protection for health data |
+| Audit log | Append-only hash-chained table (SHA-256) | Tamper detection |
+| Notifications | Email (SMTP or SES) and SMS gateway, plus in-app | Offer alerts |
+| Edge and TLS | Vercel (frontend) and Render (backend) give HTTPS automatically; security headers set in `next.config.js` and the API; rate limits in the API (slowapi) | No server of our own to manage |
+| Containers | Docker + Docker Compose for local work; Render runs the API from a Dockerfile | Same setup locally and online |
+| Frontend hosting | **Vercel** (Next.js), server region set to Mumbai (`bom1`) | Built for Next.js, preview link for every change |
+| Backend hosting | **Render**: Web Service (API), Background Worker (Celery), Cron Job (scheduled tasks), two Postgres databases (main and vault), Key Value store (Redis), all described in one `render.yaml` | One place for everything behind the API |
+| CI/CD | GitHub Actions runs tests and security scans; Vercel and Render auto-deploy from GitHub only after the checks pass | Nothing untested goes live |
+| Infrastructure code | `render.yaml` (Render Blueprint) and `vercel.json` | Repeatable setup without Terraform |
+| Monitoring | Render and Vercel built-in logs and metrics, Sentry for errors, an uptime monitor with alerts, structured JSON logs | See problems early (no personal data in logs) |
+| Testing | pytest (back end), Vitest + Testing Library (front end), Playwright (end-to-end), Hypothesis (rule property tests) | Full coverage of the rules |
+| Security scans | Bandit, pip-audit, npm audit, Trivy, OWASP ZAP | Find known weaknesses |
+| Docs | MkDocs or plain Markdown | Simple |
 
-Step 2: LISTING COLLECTION
-  listing.service ──► mockPlatform.client ──► GET /listing/:id on each platform
-    ──► raw payload stored in Listing (platform, listing_id, fetched_at, values)
-
-Step 3: NORMALIZATION AND DETECTION
-  Approved profile + stored listing values
-    ──► phone.ts (E.164 normalization)
-    ──► text.ts (case, spacing, punctuation, abbreviation normalization)
-    ──► hours.ts (regular and holiday hours comparison)
-    ──► mismatch.service ──► Mismatch records (missing | outdated | conflicting | ok)
-    ──► Conflicts with no clear source are marked "needs review", never auto-resolved
-
-Step 4: AI INVESTIGATION
-  agent.ts receives open mismatches
-    ──► tool: getProfile, fetchListing, compareFields
-    ──► conflict investigator explains why each mismatch matters
-    ──► holiday agent checks temporary closures and special schedules
-    ──► proposeUpdate creates Proposal records (status: pending_approval)
-    ──► Structured JSON output validated with Zod before saving
-
-Step 5: OWNER APPROVAL
-  Frontend Approvals page lists Proposals
-    ──► What-if simulator previews the change on each affected listing
-    ──► Owner approves or rejects
-    ──► Approved proposals are the only input allowed to reach Step 6
-
-Step 6: UPDATE
-  update.service checks: proposal approved? platform permits update? listing not blocked?
-    ──► PATCH /listing/:id on permitted mock platforms
-    ──► UpdateResult stored (success | failed | blocked)
-
-Step 7: VERIFICATION
-  verify.service reloads each updated listing via GET /listing/:id
-    ──► Compares re-read value with approved value
-    ──► Verification stored (verified | pending | failed)
-    ──► Status becomes "verified" only after a successful re-check
-
-Step 8: REPORTING
-  Frontend Report page: before-and-after values, statuses, consistency score
-    ──► score.service: matching eligible fields / total eligible fields × 100
-  Audit page: full change history
-  Alerts page: unresolved mismatches, pending approvals, blocked listings, failed updates
-```
+**Later phases:** HL7 FHIR adapter for hospital systems, a permissioned blockchain (Hyperledger Fabric) if several organizations need shared trust, maps and routing service for travel time, Hindi and Marathi translations.
 
 ---
 
-## 3. Full Directory Structure
+## 3. The main parts and what each one does
+
+### 3.1 Web app (`apps/web`)
+- Screens: Sign in, Home, Donors, Recipients, Match results, Offer detail, Committee review, Audit log, Reports, Admin.
+- Never stores medical data in the browser beyond the current page.
+- Shows "Identity hidden" labels and asks for a reason before any reveal.
+
+### 3.2 API server (`apps/api`)
+- Checks login and role on every request.
+- Saves donors, recipients, offers and decisions.
+- Calls the matching engine, then stores the result and writes the audit entry in one transaction.
+- Is the only code allowed to talk to the identity vault.
+
+### 3.3 Matching engine (`packages/matching-engine`)
+- A plain Python library with **no database and no network**.
+- Input: one donor and a list of recipients (anonymous codes only).
+- Step 1: hard filters (organ, blood group, size, crossmatch, status).
+- Step 2: scoring (urgency, HLA match, waiting time, distance, pediatric priority).
+- Output: ranked list, plus a plain-language reason for each rank and the rule version used.
+- Rules and weights are in versioned YAML files approved by the medical board. Same input always gives the same output.
+
+### 3.4 Identity vault (`apps/api/app/vault`)
+- Stores names, phone numbers, addresses and government IDs, encrypted per field.
+- Linked to the main database only by the anonymous code.
+- A reveal needs a reason and a second approval, and writes an audit entry.
+
+### 3.5 Audit log (`apps/api/app/audit`)
+- Each entry holds: id, time, actor code, action, payload fingerprint, previous entry fingerprint, and its own fingerprint.
+- Own fingerprint = SHA-256 of (previous fingerprint + canonical payload).
+- A database rule blocks UPDATE and DELETE on the table.
+- A "Verify log" job walks the whole chain and reports pass or fail.
+- A scheduled job sends the latest fingerprint to an outside store, so even an operator cannot quietly rewrite history.
+
+### 3.6 Workers (`apps/api/app/workers`)
+- Offer timers: when an offer expires, move to the next candidate.
+- Notifications: send email, SMS and in-app alerts.
+- Checkpoints: publish log fingerprints.
+- Reports: nightly fairness and waiting-time numbers.
+
+---
+
+## 4. How one match flows through the system
+
+1. **Coordinator** lists a donor organ in the web app.
+2. **API** checks login, role and input, saves the donor under an anonymous code.
+3. **API** loads waiting recipients (anonymous data only) and calls the **matching engine**.
+4. **Engine** filters, scores and returns a ranked list with reasons.
+5. **API** saves the match run and writes an **audit entry** (same transaction).
+6. **Worker** sends an offer to the top candidate's doctor and starts a timer.
+7. **Doctor** accepts or declines with a reason. The API logs it.
+8. If declined or the timer ends, the worker offers the next candidate.
+9. **Committee** approves the final match. The API logs it.
+10. **Auditor** can click "Verify log" at any time.
+
+---
+
+## 5. Security design
+
+| Area | What we do |
+| --- | --- |
+| Login | Email and password (Argon2) plus mandatory TOTP; short sessions; lock after repeated failures |
+| Access | RBAC in the API, row-level security in PostgreSQL, least privilege for every service account |
+| Identity | Separate vault database, separate keys, reveal needs reason plus approval |
+| Encryption | TLS everywhere; AES-256 at rest; field-level encryption for identity fields; keys in a key manager, rotated on a schedule |
+| Logs | Structured logs with codes only, never names or contact details |
+| Input | Strict validation (Pydantic, Zod); parameterised queries only |
+| Web | Strict Content-Security-Policy, secure cookies, CSRF protection, rate limits; frontend and API on sibling subdomains (`app.` and `api.`) so cookies stay same-site, with a strict CORS allow-list |
+| Dependencies | Automated vulnerability scans in CI; pinned versions |
+| Backups | Encrypted daily backups, tested restore every month |
+| Availability | Health checks, automatic restart, a phone fallback process for urgent offers |
+| Test data | Fake data only; seeds are generated, never copied from real hospitals |
+
+---
+
+## 6. Data model (simplified)
+
+| Table | Database | Key fields |
+| --- | --- | --- |
+| `hospital` | main | id, name, region, verified |
+| `app_user` | main | id, hospital_id, role, mfa_enabled |
+| `donor` | main | donor_code, organ, blood_group, size, test_results, status |
+| `recipient` | main | recipient_code, organ, blood_group, size, hla, urgency, listed_at, status |
+| `match_run` | main | id, donor_code, rule_version_id, created_at, result_json |
+| `offer` | main | id, match_run_id, recipient_code, status, expires_at, responded_at, reason |
+| `decision` | main | id, offer_id, committee_user_id, outcome, reason |
+| `rule_version` | main | id, weights_yaml_hash, approved_by, effective_from |
+| `audit_log` | main (append-only) | id, time, actor_code, action, payload_hash, prev_hash, entry_hash |
+| `identity` | vault | code, name_enc, phone_enc, address_enc, gov_id_enc |
+| `identity_reveal` | vault | id, code, requested_by, approved_by, reason, time |
+
+---
+
+## 7. API overview (main routes)
+
+| Route | Purpose | Allowed roles |
+| --- | --- | --- |
+| `POST /auth/login`, `POST /auth/mfa` | Sign in | everyone |
+| `GET/POST /donors` | List and register donors | coordinator, doctor |
+| `GET/POST /recipients` | List and register recipients | coordinator, doctor |
+| `POST /matches/run` | Run matching for a donor organ | coordinator, doctor |
+| `GET /matches/{id}` | Ranked list with reasons | doctor, committee |
+| `POST /offers/{id}/respond` | Accept or decline with reason | doctor |
+| `POST /decisions` | Committee approval or override | committee |
+| `POST /identity/reveal` | Request identity reveal | doctor (needs approval) |
+| `GET /audit` | Search log entries | auditor, authority |
+| `POST /audit/verify` | Re-check the full chain | auditor, authority |
+| `GET /reports/fairness` | Fairness and waiting-time reports | authority, auditor |
+| `GET/POST /admin/*` | Users, hospitals, rule versions | admin |
+
+---
+
+## 8. Environments
+
+| Environment | Purpose | Data |
+| --- | --- | --- |
+| Local | Developers, Docker Compose | Fake seed data |
+| Staging | Testing and demos (Vercel preview plus a separate Render staging setup) | Fake data only |
+| Pilot | Shadow mode with partner hospitals | Real data only after legal approval |
+| Production | Real use | Real data, full monitoring |
+
+### 8.1 Deployment: Vercel (frontend) and Render (backend)
+
+| Part | Where it runs | Notes |
+| --- | --- | --- |
+| Web app (`apps/web`) | Vercel project, root directory `apps/web` | Auto-deploys from `main`; every pull request gets its own preview link; the API address is set as `NEXT_PUBLIC_API_URL` |
+| API (`apps/api`) | Render Web Service (Docker) | Health check at `/health`; deploys after CI passes |
+| Celery worker | Render Background Worker | Same image as the API, different start command |
+| Scheduled jobs (nightly reports, log checkpoints) | Render Cron Job | Runs on a fixed schedule |
+| Main database | Render Postgres | Anonymous medical data and audit log |
+| Identity vault database | A second Render Postgres | Separate login, separate keys, never shared with the main one |
+| Redis | Render Key Value | Job queue for Celery |
+| Secrets | Vercel environment variables and Render environment groups | Never in git; the frontend holds no secrets |
+
+Things to get right:
+
+- **Same site for cookies.** Use one domain with two subdomains, for example `app.praansetu.in` (Vercel) and `api.praansetu.in` (Render). Login cookies then stay secure and same-site, and the API accepts requests only from the app domain.
+- **No free plans for real use.** Render free services go to sleep when idle and free databases expire. Offers with timers need always-on services, so use paid plans and a paid database with backups.
+- **Data location.** When I last checked, Render had no India region (Singapore was closest), while Vercel can run in Mumbai. Confirm Render's current regions, then check with a lawyer whether this is acceptable under the DPDP Act and hospital agreements before any real data. If not, move at least the identity vault and main database to an India-region host later. The code does not change for this.
+- **Rollback.** Both platforms keep earlier deployments, so a bad release can be rolled back in one click.
+
+---
+
+
+
 
 ```
-business-listing-consistency-agent/
-│
-├── .github/
-│   ├── workflows/
-│   │   ├── ci.yml                         # Lint, test, build on pull requests
-│   │   └── deploy-check.yml               # Verifies build output before deployment
-│   ├── ISSUE_TEMPLATE/
-│   │   ├── bug_report.md
-│   │   └── feature_request.md
-│   └── PULL_REQUEST_TEMPLATE.md
-│
-├── apps/
-│   │
-│   ├── web/                               # Frontend (Vercel, root: apps/web)
-│   │   ├── public/
-│   │   │   ├── favicon.ico
-│   │   │   └── robots.txt
-│   │   ├── src/
-│   │   │   ├── main.tsx                   # App entry point
-│   │   │   ├── App.tsx                    # Root component and router
-│   │   │   ├── routes/
-│   │   │   │   ├── ProfilePage.tsx        # Approved business profile editor
-│   │   │   │   ├── DashboardPage.tsx      # Listing comparison dashboard
-│   │   │   │   ├── ApprovalsPage.tsx      # Approval queue
-│   │   │   │   ├── SimulatorPage.tsx      # What-if correction simulator
-│   │   │   │   ├── ReportPage.tsx         # Before-and-after report
-│   │   │   │   ├── ScorePage.tsx          # Consistency score
-│   │   │   │   ├── AuditPage.tsx          # Change history and audit log
-│   │   │   │   ├── AlertsPage.tsx         # Smart alerts and reminders
-│   │   │   │   └── LoginPage.tsx          # Owner login
-│   │   │   ├── components/
-│   │   │   │   ├── ui/                    # Primitives: Button, Badge, Card, Modal
-│   │   │   │   ├── layout/                # Header, Sidebar, PageShell
-│   │   │   │   ├── mismatch/              # MismatchCard, ConflictExplanation
-│   │   │   │   ├── proposal/              # ProposalRow, ApproveButton, DiffView
-│   │   │   │   └── status/                # StatusBadge (verified, pending, failed, blocked)
-│   │   │   ├── features/
-│   │   │   │   ├── holidays/              # Holiday and temporary-hours UI logic
-│   │   │   │   ├── simulator/             # What-if preview logic
-│   │   │   │   └── scoring/               # Score display and breakdown
-│   │   │   ├── hooks/                     # Shared React hooks
-│   │   │   ├── lib/
-│   │   │   │   ├── api.ts                 # API client (VITE_API_BASE_URL, credentials)
-│   │   │   │   ├── queryClient.ts         # TanStack Query setup
-│   │   │   │   └── format.ts              # Date, time, phone display helpers
-│   │   │   ├── styles/
-│   │   │   │   └── index.css              # Tailwind entry and global styles
-│   │   │   └── vite-env.d.ts
-│   │   ├── .env.example
-│   │   ├── index.html
-│   │   ├── package.json
-│   │   ├── postcss.config.js
-│   │   ├── tailwind.config.ts
-│   │   ├── tsconfig.json
-│   │   ├── vercel.json                    # SPA rewrites for deep links
-│   │   └── vite.config.ts
-│   │
-│   ├── api/                               # Backend (Render, root: apps/api)
-│   │   ├── prisma/
-│   │   │   ├── schema.prisma              # Data models
-│   │   │   ├── migrations/                # Migration history
-│   │   │   └── seed.ts                    # Sample business and listing data
-│   │   ├── src/
-│   │   │   ├── server.ts                  # Starts the HTTP server
-│   │   │   ├── app.ts                     # Express setup, middleware, routes
-│   │   │   ├── config/
-│   │   │   │   ├── env.ts                 # Validated environment variables (Zod)
-│   │   │   │   └── cors.ts                # CORS allow-list from CORS_ORIGINS
-│   │   │   ├── routes/
-│   │   │   │   ├── health.routes.ts       # GET /health
-│   │   │   │   ├── auth.routes.ts         # POST /auth/login, /auth/logout, GET /auth/me
-│   │   │   │   ├── profile.routes.ts      # /profile
-│   │   │   │   ├── listings.routes.ts     # /listings
-│   │   │   │   ├── mismatches.routes.ts   # /mismatches
-│   │   │   │   ├── proposals.routes.ts    # /proposals (create, approve, reject)
-│   │   │   │   ├── updates.routes.ts      # /updates
-│   │   │   │   ├── verify.routes.ts       # /verify
-│   │   │   │   ├── score.routes.ts        # /score
-│   │   │   │   ├── audit.routes.ts        # /audit
-│   │   │   │   └── alerts.routes.ts       # /alerts
-│   │   │   ├── controllers/               # Request handling, one per route file
-│   │   │   ├── services/
-│   │   │   │   ├── profile.service.ts
-│   │   │   │   ├── listing.service.ts     # Fetches listings from mock platforms
-│   │   │   │   ├── mismatch.service.ts    # Detection rules
-│   │   │   │   ├── proposal.service.ts    # Creates and approves proposals
-│   │   │   │   ├── update.service.ts      # Applies approved changes
-│   │   │   │   ├── verify.service.ts      # Re-checks and confirms updates
-│   │   │   │   ├── score.service.ts       # Consistency score calculation
-│   │   │   │   ├── audit.service.ts       # Writes audit log entries
-│   │   │   │   └── alert.service.ts       # Builds alerts and reminders
-│   │   │   ├── agent/
-│   │   │   │   ├── agent.ts               # Agent loop and orchestration
-│   │   │   │   ├── tools/
-│   │   │   │   │   ├── getProfile.ts
-│   │   │   │   │   ├── fetchListing.ts
-│   │   │   │   │   ├── compareFields.ts
-│   │   │   │   │   ├── proposeUpdate.ts
-│   │   │   │   │   ├── applyUpdate.ts
-│   │   │   │   │   └── verifyListing.ts
-│   │   │   │   ├── prompts/               # Versioned system and task prompts
-│   │   │   │   ├── schemas/               # JSON output schemas
-│   │   │   │   └── guardrails.ts          # Approval and conflict rules
-│   │   │   ├── features/
-│   │   │   │   ├── investigator/          # AI listing conflict investigator
-│   │   │   │   ├── holidays/              # Holiday and temporary-hours agent
-│   │   │   │   └── simulator/             # What-if correction simulator
-│   │   │   ├── normalization/
-│   │   │   │   ├── phone.ts               # libphonenumber-js wrapper
-│   │   │   │   ├── text.ts                # Text normalization
-│   │   │   │   └── hours.ts               # Opening-hours comparison
-│   │   │   ├── clients/
-│   │   │   │   ├── anthropic.client.ts    # Claude API client
-│   │   │   │   └── mockPlatform.client.ts # HTTP client for mock platforms
-│   │   │   ├── jobs/
-│   │   │   │   └── scheduledRecheck.ts    # Cron entry point
-│   │   │   ├── middleware/
-│   │   │   │   ├── auth.ts                # Owner-only route protection
-│   │   │   │   ├── errorHandler.ts
-│   │   │   │   └── validate.ts            # Zod request validation
-│   │   │   ├── db/
-│   │   │   │   └── prisma.ts              # Prisma client singleton
-│   │   │   ├── utils/
-│   │   │   │   ├── logger.ts
-│   │   │   │   └── dates.ts
-│   │   │   └── types/
-│   │   │       └── express.d.ts
-│   │   ├── test/
-│   │   │   ├── unit/                      # Normalization, scoring, mismatch rules
-│   │   │   ├── api/                       # Supertest route tests
-│   │   │   └── fixtures/                  # Sample profiles and listing payloads
-│   │   ├── .env.example
-│   │   ├── package.json
-│   │   ├── tsconfig.json
-│   │   └── vitest.config.ts
-│   │
-│   ├── e2e/                               # Playwright end-to-end demo flow tests
-│   │   ├── demo-flow.spec.ts
-│   │   └── playwright.config.ts
-│   │
-│   └── mock-platforms/                    # Mock listing sites (Render, root: apps/mock-platforms)
-│       ├── src/
-│       │   ├── server.ts                  # Starts all mock platforms
-│       │   ├── platforms/
-│       │   │   ├── mockMapsA/
-│       │   │   │   ├── index.ts           # Read-write platform
-│       │   │   │   ├── permissions.ts
-│       │   │   │   └── data.json
-│       │   │   ├── mockMapsB/
-│       │   │   │   ├── index.ts           # Read-only platform
-│       │   │   │   ├── permissions.ts
-│       │   │   │   └── data.json
-│       │   │   └── mockDirectoryC/
-│       │   │       ├── index.ts           # Blocks updates during holiday hours
-│       │   │       ├── permissions.ts
-│       │   │       └── data.json
-│       │   └── shared/
-│       │       ├── routes.ts              # GET and PATCH /listing/:id
-│       │       └── store.ts               # In-memory state, reset on restart
-│       ├── .env.example
-│       ├── package.json
-│       └── tsconfig.json
-│
-├── packages/
-│   └── shared/                            # Code shared by web and api (@bizlisting/shared)
-│       ├── src/
-│       │   ├── index.ts
-│       │   ├── types/
-│       │   │   ├── profile.ts
-│       │   │   ├── listing.ts
-│       │   │   ├── mismatch.ts
-│       │   │   ├── proposal.ts
-│       │   │   └── audit.ts
-│       │   ├── schemas/                   # Zod schemas used by api and web
-│       │   └── constants/
-│       │       └── statuses.ts            # verified, pending, failed, blocked
-│       ├── package.json
-│       └── tsconfig.json
+praansetu/
+├── README.md
+├── ARCHITECTURE.md
+├── LICENSE
+├── .gitignore
+├── .env.example                     # example settings, no real secrets
+├── docker-compose.yml               # runs everything locally
+├── Makefile                         # shortcuts: make dev, make test
 │
 ├── docs/
-│   ├── architecture.md                    # This document
-│   ├── api.md                             # Endpoint reference
-│   ├── agent-design.md                    # Tools, guardrails, prompts
-│   └── demo-script.md                     # Step-by-step demo guide
+│   ├── prd.md                       # product requirements
+│   ├── matching-rules.md            # rules explained in plain words
+│   ├── privacy-and-security.md
+│   ├── audit-log-design.md
+│   ├── legal-checklist.md           # THOTA, DPDP Act, ABDM, NOTTO notes
+│   ├── api/                         # generated API reference
+│   ├── design/
+│   │   ├── design-principles.md     # calm, clean, not template-looking
+│   │   ├── design-tokens.md         # colors, fonts, spacing
+│   │   ├── screen-list.md
+│   │   └── wireframes/
+│   └── runbooks/
+│       ├── backup-and-restore.md
+│       ├── incident-response.md
+│       └── phone-fallback.md
 │
-├── scripts/
-│   ├── setup.sh                           # First-time local setup
-│   └── check-env.ts                       # Validates required env variables
+├── apps/
+│   ├── web/                         # front end (Next.js + TypeScript)
+│   │   ├── package.json
+│   │   ├── tsconfig.json
+│   │   ├── next.config.js
+│   │   ├── vercel.json                  # Vercel settings (region, headers)
+│   │   ├── tailwind.config.ts
+│   │   ├── public/
+│   │   │   └── fonts/
+│   │   └── src/
+│   │       ├── app/                 # pages (routes)
+│   │       │   ├── (auth)/sign-in/
+│   │       │   ├── (app)/home/
+│   │       │   ├── (app)/donors/
+│   │       │   ├── (app)/recipients/
+│   │       │   ├── (app)/matches/
+│   │       │   ├── (app)/offers/
+│   │       │   ├── (app)/committee/
+│   │       │   ├── (app)/audit/
+│   │       │   ├── (app)/reports/
+│   │       │   └── (app)/admin/
+│   │       ├── components/
+│   │       │   ├── ui/              # buttons, inputs, status chips, tables
+│   │       │   ├── match/           # ranked table, "why this rank" panel
+│   │       │   ├── offer/           # countdown, accept/decline form
+│   │       │   └── audit/           # log list, verify button
+│   │       ├── lib/                 # api client, auth helpers, formatters
+│   │       ├── hooks/
+│   │       ├── styles/              # global styles and design tokens
+│   │       ├── i18n/                # English now; Hindi and Marathi later
+│   │       └── tests/
+│   │
+│   └── api/                         # back end (FastAPI)
+│       ├── pyproject.toml
+│       ├── alembic.ini
+│       ├── Dockerfile
+│       ├── migrations/              # database changes, versioned
+│       ├── app/
+│       │   ├── main.py              # app start
+│       │   ├── config.py            # settings from environment
+│       │   ├── deps.py              # shared dependencies
+│       │   ├── api/
+│       │   │   ├── routes_auth.py
+│       │   │   ├── routes_donors.py
+│       │   │   ├── routes_recipients.py
+│       │   │   ├── routes_matches.py
+│       │   │   ├── routes_offers.py
+│       │   │   ├── routes_decisions.py
+│       │   │   ├── routes_identity.py
+│       │   │   ├── routes_audit.py
+│       │   │   ├── routes_reports.py
+│       │   │   └── routes_admin.py
+│       │   ├── core/
+│       │   │   ├── security.py      # password hashing, tokens, MFA
+│       │   │   ├── permissions.py   # role rules
+│       │   │   ├── codes.py         # anonymous code generator
+│       │   │   └── errors.py
+│       │   ├── models/              # database tables (SQLAlchemy)
+│       │   ├── schemas/             # request and response shapes (Pydantic)
+│       │   ├── services/
+│       │   │   ├── donor_service.py
+│       │   │   ├── recipient_service.py
+│       │   │   ├── match_service.py     # calls the matching engine
+│       │   │   ├── offer_service.py
+│       │   │   ├── decision_service.py
+│       │   │   └── report_service.py
+│       │   ├── vault/               # identity vault access (only entry point)
+│       │   │   ├── client.py
+│       │   │   ├── encryption.py
+│       │   │   └── reveal.py
+│       │   ├── audit/
+│       │   │   ├── chain.py         # build and verify the hash chain
+│       │   │   ├── writer.py
+│       │   │   └── checkpoint.py
+│       │   ├── workers/
+│       │   │   ├── celery_app.py
+│       │   │   ├── offer_timers.py
+│       │   │   ├── notifications.py
+│       │   │   ├── checkpoints.py
+│       │   │   └── reports.py
+│       │   └── db/
+│       │       ├── session.py
+│       │       └── rls.sql          # row-level security policies
+│       ├── scripts/
+│       │   ├── seed_fake_data.py    # makes fake donors and recipients
+│       │   └── verify_audit_chain.py
+│       └── tests/
+│           ├── unit/
+│           ├── integration/
+│           └── security/
 │
-├── .gitignore
-├── .editorconfig
-├── .prettierrc
-├── .eslintrc.cjs
-├── package.json                           # Root workspace config
-├── tsconfig.base.json
-├── LICENSE
-├── README.md
-├── CONTRIBUTING.md
-└── ARCHITECTURE.md                        # This file
+├── packages/
+│   ├── matching-engine/             # pure Python library, no database
+│   │   ├── pyproject.toml
+│   │   ├── src/praansetu_matching/
+│   │   │   ├── __init__.py
+│   │   │   ├── models.py            # Donor, Recipient, Result types
+│   │   │   ├── filters/
+│   │   │   │   ├── blood_group.py
+│   │   │   │   ├── size.py
+│   │   │   │   ├── crossmatch.py
+│   │   │   │   └── status.py
+│   │   │   ├── scoring/
+│   │   │   │   ├── urgency.py
+│   │   │   │   ├── hla.py
+│   │   │   │   ├── waiting_time.py
+│   │   │   │   ├── distance.py
+│   │   │   │   └── pediatric.py
+│   │   │   ├── explain.py           # builds "why this rank" text
+│   │   │   ├── engine.py            # runs filters, then scores
+│   │   │   └── rules_loader.py      # reads and checks YAML rules
+│   │   ├── rules/
+│   │   │   ├── kidney/v1.yaml       # first rule set (needs doctor review)
+│   │   │   ├── liver/               # later
+│   │   │   └── heart/               # later
+│   │   └── tests/
+│   │       ├── test_filters.py
+│   │       ├── test_scoring.py
+│   │       ├── test_determinism.py  # same input, same output
+│   │       └── cases/               # doctor-checked test cases
+│   │
+│   └── shared-types/                # shared names and enums (organ, status)
+│
+├── render.yaml                      # Render Blueprint: API, worker, cron job, 2 databases, Redis
+├── infra/
+│   ├── docker/
+│   │   └── api.Dockerfile           # builds the backend for Render (also used locally)
+│   └── monitoring/
+│       └── uptime-checks.md         # what we watch and who gets alerts
+│
+├── tools/
+│   ├── fake-data-generator/         # realistic fake patients for testing
+│   └── audit-verifier/              # standalone checker for auditors
+│
+└── .github/
+    ├── workflows/
+    │   ├── ci.yml                   # tests, lint, type checks
+    │   ├── security.yml             # dependency and container scans
+    │   └── post-deploy-check.yml    # quick health check after Vercel and Render deploy
+    ├── ISSUE_TEMPLATE/
+    └── pull_request_template.md
 ```
+
+**Why this layout.**
+- `apps/` holds things that run (web, API).
+- `packages/` holds reusable code. The matching engine lives here so it stays free of databases and is easy for doctors and auditors to review.
+- `docs/` keeps the PRD, rules, legal checklist and design notes together.
+- `render.yaml` (root) and `apps/web/vercel.json` describe how the backend and frontend are deployed. `infra/` keeps the backend Dockerfile and monitoring notes apart from product code.
+- `tools/` holds helper programs, such as the fake data generator and a standalone log checker.
 
 ---
 
-## 4. Module Breakdowns
+## 10. Build order (what to code first)
 
-### 4.1 Backend: Express API
-
-**Entry point: `apps/api/src/app.ts`**
-
-Responsibilities:
-- Creates the Express app and applies JSON parsing, CORS (from `config/cors.ts`), cookie parsing, and the error handler.
-- Registers routers under `/api/v1/` (except `/health` and `/auth`).
-- Starts the HTTP server from `server.ts`, which reads and validates env variables first.
-
-```
-app.ts
- ├─ app.use(cors(corsOptions))           // CORS_ORIGINS allow-list, credentials: true
- ├─ app.use(express.json())
- ├─ app.use(cookieParser())
- ├─ app.use("/health", healthRouter)
- ├─ app.use("/auth", authRouter)
- ├─ app.use("/api/v1/profile",   requireAuth, profileRouter)
- ├─ app.use("/api/v1/listings",  requireAuth, listingsRouter)
- ├─ app.use("/api/v1/mismatches",requireAuth, mismatchesRouter)
- ├─ app.use("/api/v1/proposals", requireAuth, proposalsRouter)
- ├─ app.use("/api/v1/updates",   requireAuth, updatesRouter)
- ├─ app.use("/api/v1/verify",    requireAuth, verifyRouter)
- ├─ app.use("/api/v1/score",     requireAuth, scoreRouter)
- ├─ app.use("/api/v1/audit",     requireAuth, auditRouter)
- ├─ app.use("/api/v1/alerts",    requireAuth, alertsRouter)
- └─ app.use(errorHandler)
-```
-
-**Key routes**
-
-| Route file | Endpoints | Notes |
-|---|---|---|
-| `auth.routes.ts` | `POST /auth/login`, `POST /auth/logout`, `GET /auth/me` | Sets the session cookie (see 4.7) |
-| `profile.routes.ts` | `GET /profile`, `PUT /profile` | Every write is audited |
-| `listings.routes.ts` | `GET /listings`, `POST /listings/refresh` | Refresh fetches from mock platforms |
-| `mismatches.routes.ts` | `GET /mismatches`, `GET /mismatches/:id` | Includes AI explanation when available |
-| `proposals.routes.ts` | `GET /proposals`, `POST /proposals/:id/approve`, `POST /proposals/:id/reject` | Approval is the only path to updates |
-| `updates.routes.ts` | `POST /updates` | Applies approved proposals only |
-| `verify.routes.ts` | `POST /verify` | Re-checks listings and sets verification status |
-| `score.routes.ts` | `GET /score` | Returns score and the calculation breakdown |
-| `audit.routes.ts` | `GET /audit` | Paginated, filterable history |
-| `alerts.routes.ts` | `GET /alerts` | Unresolved mismatches, pending approvals, blocked, failed |
-
-**Route handler pattern (every route follows this)**
-
-```
-route  →  validate (Zod)  →  controller  →  service  →  Prisma / agent / mock client
-                                             │
-                                             └─ audit.service.record(...) on any write
-```
-
-**Environment variables (validated in `config/env.ts`)**
-
-| Variable | Purpose |
-|---|---|
-| `DATABASE_URL` | PostgreSQL connection string |
-| `ANTHROPIC_API_KEY` | Claude API key |
-| `CORS_ORIGINS` | Allowed frontend origins (Vercel production and preview domains) |
-| `SESSION_SECRET` | Signs session tokens |
-| `OWNER_EMAIL` / `OWNER_PASSWORD_HASH` | Single-owner login for the prototype |
-| `MOCK_PLATFORM_URLS` | Base URLs for the mock platforms |
-| `NODE_ENV` | Environment mode |
+1. **Foundation:** repo, Docker Compose, Postgres, FastAPI skeleton, Next.js skeleton, CI. Deploy both skeletons early (frontend on Vercel, backend on Render) so deployment problems show up on day one.
+2. **Login and roles:** users, MFA, RBAC, first screens (Sign in, Home).
+3. **Registry:** donor and recipient forms, anonymous codes, fake data seeder.
+4. **Matching engine:** filters, scoring, kidney `v1.yaml`, tests with doctor-checked cases.
+5. **Match results screen:** ranked table with "why this rank" reasons.
+6. **Audit log:** hash chain, append-only rule, "Verify log" button.
+7. **Offers:** accept or decline, timers, notifications.
+8. **Identity vault:** separate database, encryption, reveal with approval.
+9. **Committee, reports, admin.**
+10. **Security hardening and testing:** scans, penetration test, backup restore test.
+11. **Shadow pilot** with partner hospitals after legal approval.
 
 ---
 
-### 4.2 AI Agent Layer
+## 11. Key decisions and trade-offs
 
-The agent lives in `apps/api/src/agent/`. It is an orchestrator. It calls defined tools, and every write goes through a service that checks approval.
-
-**Agent loop (`agent.ts`)**
-
-```
-runAgent(task)
-  1. Build context: approved profile + open mismatches (from DB)
-  2. Send to Claude with tool definitions and the system prompt
-  3. While Claude requests tools:
-       execute tool → validate input with Zod → return result to Claude
-  4. Parse final structured output with the JSON schema (Zod)
-  5. Save explanations and proposals; never save an update here
-  6. Record every tool call in the audit log
-```
-
-**Tools (`agent/tools/`)**
-
-| Tool | Purpose | Writes? |
-|---|---|---|
-| `getProfile` | Reads the approved profile | No |
-| `fetchListing` | Reads a listing from a mock platform | No |
-| `compareFields` | Runs the normalization and comparison for one field | No |
-| `proposeUpdate` | Creates a Proposal with status `pending_approval` | Proposal only |
-| `applyUpdate` | Calls update.service; refuses unless the proposal is approved | Listing (guarded) |
-| `verifyListing` | Re-reads a listing and compares with the approved value | No |
-
-**Models**
-- A faster Claude model (for example, Claude Haiku) handles routine field comparison and explanations.
-- A stronger model (for example, Claude Sonnet) handles conflict investigation and holiday reasoning.
-
-**Guardrails (`guardrails.ts`)**
-
-```
-Rule 1: No listing write without an approved Proposal.
-Rule 2: When two sources disagree and the profile does not decide it, mark "needs review". Never pick a value.
-Rule 3: A listing may be marked "verified" only after verifyListing confirms the applied value.
-Rule 4: Never bypass a platform permission. Blocked listings stay blocked.
-Rule 5: Agent output that fails schema validation is discarded and retried once, then flagged.
-```
-
-**Prompts (`agent/prompts/`)**
-- Each prompt file has a version number in its header. Changing a prompt means bumping the version, so audit records can show which prompt produced a result.
+| Decision | Chosen | Alternative | Reason |
+| --- | --- | --- | --- |
+| Back end language | Python (FastAPI) | Node.js | Easy to write and read matching rules; strong data tools |
+| Audit trail | Hash-chained table | Blockchain now | Simple and cheap; add a permissioned chain later |
+| Matching engine | Separate pure library | Inside API | Easy to test, audit and show to doctors |
+| Repo style | Monorepo | Separate repos | One place to change front end, API and rules together |
+| Rules storage | Versioned YAML | Hard-coded | Medical board can review and approve changes |
+| Identity storage | Separate vault database | Same database | Limits damage if one store leaks |
+| First organ | Kidney | All organs | Most patients, clearest rules |
+| Frontend hosting | Vercel | Self-hosted | Made for Next.js; previews and rollbacks included |
+| Backend hosting | Render | Own servers (AWS, Kubernetes) | Simple to run alone; workers, cron, Postgres and Redis in one place |
 
 ---
 
-### 4.3 Normalization and Detection
-
-These pure functions are the most heavily tested part of the backend.
-
-| File | Responsibility | Example |
-|---|---|---|
-| `phone.ts` | Parses to E.164 with libphonenumber-js | `(555) 010-2234` and `+1 555 010 2234` match |
-| `text.ts` | Lowercases, trims, collapses spaces, normalizes common abbreviations | `St.` and `Street` match |
-| `hours.ts` | Compares regular and holiday hours as structured time ranges | `9:00 AM` and `09:00` match |
-
-**`mismatch.service.ts` classification**
-
-```
-for each eligible field (name, address, phone, regular hours, holiday hours):
-  if listing value is empty            → MISSING
-  if normalized values are equal       → OK
-  if listing is older than profile update → OUTDATED
-  if values differ and profile is the source of truth → CONFLICTING
-  if values differ and no clear source → NEEDS_REVIEW (no auto-fix)
-```
-
-Only fields that exist on a listing count toward the consistency score. Unsupported fields are excluded from both the numerator and the denominator, and the report says so.
-
----
-
-### 4.4 Mock Listing Platforms
-
-`apps/mock-platforms/` runs three small Express apps in one service. Each has its own seeded data and permission rules, so the demo covers every status.
-
-| Platform | Permission | Demo purpose |
-|---|---|---|
-| `mockMapsA` | Full read and write | Shows the verified path |
-| `mockMapsB` | Read only | Shows `blocked` for every update |
-| `mockDirectoryC` | Blocks updates on holiday dates | Shows `blocked` by schedule and the holiday agent |
-
-**Endpoints (same shape on every platform)**
-
-```
-GET   /listing/:id    → returns the listing's current values
-PATCH /listing/:id    → updates permitted fields, or returns 403 with a reason
-```
-
-**Store behavior:** `store.ts` keeps state in memory and resets on restart. For the demo, the seed data is reloaded on startup so every run starts from the same state.
-
----
-
-### 4.5 Frontend: React on Vercel
-
-**Pages (`apps/web/src/routes/`)**
-
-| Page | Shows | Data source |
-|---|---|---|
-| `ProfilePage` | Approved profile editor | `GET/PUT /profile` |
-| `DashboardPage` | Listing comparison across platforms | `GET /listings` |
-| `ApprovalsPage` | Pending proposals with approve and reject | `GET /proposals` |
-| `SimulatorPage` | What-if preview for a proposal | `GET /proposals/:id` plus local preview |
-| `ReportPage` | Before-and-after values and statuses | `GET /updates`, `GET /verify` |
-| `ScorePage` | Consistency score and calculation | `GET /score` |
-| `AuditPage` | Change history | `GET /audit` |
-| `AlertsPage` | Unresolved issues | `GET /alerts` |
-| `LoginPage` | Owner login | `POST /auth/login` |
-
-**Status display**
-
-`StatusBadge` takes one of four values from `@bizlisting/shared`: `verified`, `pending`, `failed`, `blocked`. The UI never displays a status the backend did not return.
-
-**API client (`lib/api.ts`)**
-
-```ts
-export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
-  withCredentials: true,   // sends the session cookie to the Render backend
-});
-```
-
-**Routing on Vercel:** `vercel.json` rewrites all paths to `index.html` so deep links such as `/approvals` load correctly.
-
----
-
-### 4.6 Database Layer
-
-**Engine:** PostgreSQL on Render (Managed). Prisma is the ORM. Schema changes go through `prisma migrate`.
-
-**Core models**
-
-```prisma
-model BusinessProfile {
-  id           String   @id @default(uuid())
-  name         String
-  address      String
-  phone        String           // stored as E.164
-  regularHours Json
-  holidayHours Json
-  updatedAt    DateTime @updatedAt
-}
-
-model Listing {
-  id          String   @id @default(uuid())
-  platform    String
-  externalId  String
-  values      Json
-  fetchedAt   DateTime
-  @@unique([platform, externalId])
-}
-
-model Mismatch {
-  id          String   @id @default(uuid())
-  listingId   String
-  field       String
-  profileValue Json
-  listingValue Json?
-  kind        MismatchKind      // MISSING | OUTDATED | CONFLICTING | NEEDS_REVIEW
-  explanation String?
-  createdAt   DateTime @default(now())
-}
-
-model Proposal {
-  id            String         @id @default(uuid())
-  mismatchId    String
-  platform      String
-  field         String
-  oldValue      Json?
-  newValue      Json
-  status        ProposalStatus // PENDING_APPROVAL | APPROVED | REJECTED
-  approvedAt    DateTime?
-  approvedBy    String?
-  createdAt     DateTime       @default(now())
-}
-
-model UpdateResult {
-  id          String       @id @default(uuid())
-  proposalId  String
-  outcome     UpdateOutcome // SUCCESS | FAILED | BLOCKED
-  response    Json?
-  createdAt   DateTime     @default(now())
-}
-
-model Verification {
-  id           String             @id @default(uuid())
-  proposalId   String
-  observedValue Json?
-  status       VerificationStatus // VERIFIED | PENDING | FAILED | BLOCKED
-  checkedAt    DateTime           @default(now())
-}
-
-model AuditLog {
-  id        String   @id @default(uuid())
-  eventType String
-  actor     String           // "owner" or "agent"
-  payload   Json
-  createdAt DateTime @default(now())
-  @@index([createdAt])
-}
-```
-
-**Relationships:** `Mismatch` → `Proposal` → `UpdateResult` and `Verification`. Following one chain shows the full history of a single correction.
-
-**Indexes:** `AuditLog.createdAt` for the audit page, and `Listing(platform, externalId)` for lookups.
-
----
-
-### 4.7 Auth and Permissions
-
-The prototype has one owner account. Multi-user roles are listed as a future step.
-
-**Flow**
-
-```
-Owner → POST /auth/login (email + password)
-      → Backend checks the password against OWNER_PASSWORD_HASH (bcrypt)
-      → Issues a signed session token (JWT, 8-hour expiry)
-      → Sets it as an HttpOnly, Secure cookie with SameSite=None
-      → Frontend sends requests with credentials: "include"
-
-Protected route:
-      → requireAuth middleware verifies the token
-      → 401 if missing or invalid
-```
-
-**Cross-domain cookie note:** The frontend (Vercel) and backend (Render) are on different domains, so the cookie must use `SameSite=None; Secure`. Both sides must use HTTPS. The CORS allow-list must list the exact Vercel origin, not a wildcard, because credentialed requests do not accept `*`.
-
-**Owner-only actions:** every route in section 4.1 requires login. There is no read-only public view.
-
----
-
-### 4.8 Background Jobs
-
-**Scheduled re-check** (`jobs/scheduledRecheck.ts`)
-
-```
-Render Cron Job (for example, every 6 hours):
-  1. Re-fetch all listings from mock platforms
-  2. Re-run mismatch detection
-  3. Update alert status (new, resolved, still open)
-  4. Mark any proposal whose listing changed outside the app as "needs review"
-```
-
-The cron job calls the same services as the API, so it does not duplicate logic. It runs as a separate Render service with the same environment variables.
-
----
-
-## 5. Inter-Service Communication
-
-| Path | Protocol | Direction | Payload |
-|---|---|---|---|
-| Frontend → Backend | HTTPS REST with cookies | Request and response | JSON |
-| Backend → Mock platforms | HTTPS REST | Outbound | `GET` and `PATCH /listing/:id` |
-| Backend → Claude API | HTTPS | Outbound | Messages with tool definitions |
-| Backend → PostgreSQL | TCP (Prisma) | Read and write | SQL |
-| Render Cron → Backend | Shared code and DB | Internal | None (runs the job directly) |
-
-No WebSockets are used. Owners refresh the page or use the "Refresh" button to pull new data. Live streaming can be added later if needed.
-
----
-
-## 6. Security Architecture
-
-```
-┌──────────────────────────────────────────────────────────┐
-│                    Security Layers                        │
-│                                                          │
-│  1. Transport    → HTTPS on Vercel and Render (managed)  │
-│                                                          │
-│  2. Auth         → Single owner login                    │
-│                    Signed session token, 8-hour expiry   │
-│                    HttpOnly · Secure · SameSite=None     │
-│                                                          │
-│  3. CORS         → Explicit allow-list (no wildcard)     │
-│                    credentials: true                     │
-│                                                          │
-│  4. Write        → Every listing write needs an approved │
-│     Control        Proposal (enforced in update.service) │
-│                                                          │
-│  5. Validation   → Zod on all request bodies, params,    │
-│                    and LLM output before it is saved     │
-│                                                          │
-│  6. Permissions  → Platform rules respected; blocked     │
-│                    listings are never written to         │
-│                                                          │
-│  7. Audit        → Every write and agent action logged   │
-│                                                          │
-│  8. Secrets      → Env vars only; .env files gitignored  │
-│                    Rotate ANTHROPIC_API_KEY if exposed   │
-└──────────────────────────────────────────────────────────┘
-```
-
-**Prompt safety:** Listing content comes from external sites, so it is treated as data, not instructions. Before listing text goes to Claude, it is wrapped in a labeled data block, and the system prompt tells the agent to ignore instructions found inside it.
-
----
-
-## 7. Deployment Architecture
-
-**Local development**
-
-```
-npm run dev (from the repository root)
-  → Vite dev server      http://localhost:5173   (apps/web)
-  → Express API          http://localhost:4000   (apps/api, tsx watch)
-  → Mock platforms       http://localhost:4100   (apps/mock-platforms)
-  → PostgreSQL           local instance or Docker container
-```
-
-Docker is optional for local PostgreSQL only, for example:
-
-```bash
-docker run --name bizlisting-db -e POSTGRES_PASSWORD=dev -p 5432:5432 -d postgres:15
-```
-
-**Production (hackathon demo)**
-
-```
-┌────────────────────┐         ┌─────────────────────────────┐
-│  Vercel            │  HTTPS  │  Render: Web Service        │
-│  apps/web          │────────►│  apps/api                   │
-│  (static Vite app) │         │  Express + Prisma + agent   │
-└────────────────────┘         └──────┬──────────────┬───────┘
-                                      │              │
-                       ┌──────────────▼──┐    ┌──────▼──────────────┐
-                       │ Render: Managed │    │ Render: Web Service │
-                       │ PostgreSQL      │    │ apps/mock-platforms │
-                       └─────────────────┘    └─────────────────────┘
-                                      │
-                       ┌──────────────▼──────────────┐
-                       │ Render: Cron Job            │
-                       │ jobs/scheduledRecheck.ts    │
-                       └─────────────────────────────┘
-```
-
-**Service settings**
-
-| Service | Platform | Root directory | Build | Start |
-|---|---|---|---|---|
-| Frontend | Vercel | `apps/web` | `vite build` | Static |
-| API | Render Web Service | `apps/api` | `npm install && npx prisma migrate deploy && npm run build` | `npm start` |
-| Mock platforms | Render Web Service | `apps/mock-platforms` | `npm install && npm run build` | `npm start` |
-| Re-check job | Render Cron Job | `apps/api` | Same as API | `npm run job:recheck` |
-| Database | Render Managed PostgreSQL | n/a | n/a | n/a |
-
-**Environment configuration**
-
-| Where | Variables |
-|---|---|
-| Vercel | `VITE_API_BASE_URL` (Render API URL) |
-| Render API | `DATABASE_URL`, `ANTHROPIC_API_KEY`, `CORS_ORIGINS`, `SESSION_SECRET`, `OWNER_EMAIL`, `OWNER_PASSWORD_HASH`, `MOCK_PLATFORM_URLS`, `NODE_ENV` |
-| Render Mock platforms | `NODE_ENV` |
-| Render Cron Job | Same as Render API |
-
-**Operational notes**
-- Render's free tier sleeps after inactivity. Warm up the API and mock platforms before a live demo.
-- Use the internal database URL for services on Render. Use the external URL only for local development.
-- Health check path: `/health` on the API.
-- Deploy previews on Vercel use separate domains. Add each one to `CORS_ORIGINS` if you test against them.
-
----
-
-*Last updated: 2026-10-20*
+## 12. Open items
+
+- Confirm the final country, state and partner hospitals (this sets the legal rules and rule sets).
+- Get a transplant doctor to review `rules/kidney/v1.yaml` before any real use.
+- Confirm that Render's regions are acceptable for data-residency rules (see section 8.1), and choose the key manager.
+- Buy the domain and plan the `app.` and `api.` subdomains.
+- Decide who runs the platform and who owns the audit checkpoints.
+- Check the PraanSetu name, domains and trademark.
