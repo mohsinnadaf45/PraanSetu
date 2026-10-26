@@ -13,14 +13,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy matching engine package first (local dependency)
 COPY packages/matching-engine /packages/matching-engine
 
-# Copy API pyproject.toml and install dependencies
-COPY apps/api/pyproject.toml /app/pyproject.toml
+# Copy application code and dependencies
+COPY apps/api /app
+
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir -e /packages/matching-engine \
     && pip install --no-cache-dir -e /app
-
-# Copy application code
-COPY apps/api /app
 
 # Non-root user for security
 RUN addgroup --gid 1001 praansetu && \
