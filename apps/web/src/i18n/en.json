@@ -1,0 +1,39 @@
+{
+  "app": {
+    "name": "PraanSetu",
+    "tagline": "Bridge of Life - Organ Allocation & Match Coordination",
+    "identityShield": "Identity Hidden (Locked in Vault)"
+  },
+  "nav": {
+    "home": "Overview",
+    "donors": "Donors Registry",
+    "recipients": "Waitlist Patients",
+    "matches": "Allocation Runs",
+    "offers": "Active Offers",
+    "committee": "Committee Review",
+    "audit": "Audit & Verifier",
+    "reports": "Fairness & Analytics",
+    "admin": "System Administration",
+    "signOut": "Sign Out"
+  },
+  "roles": {
+    "coordinator": "Hospital Coordinator",
+    "doctor": "Transplant Surgeon / Doctor",
+    "committee": "Transplant Ethics Committee",
+    "auditor": "Independent Auditor",
+    "authority": "State / National Authority",
+    "admin": "System Administrator"
+  },
+  "status": {
+    "available": "Available",
+    "waiting": "Waiting",
+    "matched": "Matched",
+    "pending": "Pending Decision",
+    "accepted": "Accepted",
+    "declined": "Declined",
+    "expired": "Expired",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "overridden": "Overridden"
+  }
+}
