@@ -226,8 +226,7 @@ Things to get right:
 
 ---
 
-
-
+## 9. Full folder structure
 
 ```
 praansetu/
