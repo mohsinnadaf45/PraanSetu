@@ -1,146 +1,36 @@
-# Render Blueprint: defines all backend services for PraanSetu
-# Deploy by connecting this repo to Render and pointing to this file.
+# Render Blueprint: 100% Free Tier Configuration (No Credit Card Required)
+# Deploys PraanSetu API and a managed PostgreSQL database under Render's Free tier.
 
 services:
-  # ── API Web Service ───────────────────────────────────────────
+  # ── API Web Service (Free Tier) ───────────────────────────────
   - type: web
     name: praansetu-api
     runtime: docker
     dockerfilePath: ./apps/api/Dockerfile
     dockerContext: .
-    region: singapore  # Closest to India; review for DPDP Act compliance
-    plan: starter
+    region: singapore
+    plan: free
     healthCheckPath: /health
     envVars:
       - key: APP_ENV
         value: production
       - key: DATABASE_URL
         fromDatabase:
-          name: praansetu-main-db
+          name: praansetu-db
           property: connectionString
       - key: VAULT_DATABASE_URL
         fromDatabase:
-          name: praansetu-vault-db
-          property: connectionString
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: praansetu-redis
-          property: connectionString
-      - key: CELERY_BROKER_URL
-        fromService:
-          type: redis
-          name: praansetu-redis
-          property: connectionString
-      - key: CELERY_RESULT_BACKEND
-        fromService:
-          type: redis
-          name: praansetu-redis
+          name: praansetu-db
           property: connectionString
       - key: SECRET_KEY
         generateValue: true
       - key: VAULT_ENCRYPTION_KEY
         generateValue: true
-      - key: SENTRY_DSN
-        sync: false
-      - key: SMTP_HOST
-        sync: false
-      - key: SMTP_PASSWORD
-        sync: false
-
-  # ── Celery Worker ─────────────────────────────────────────────
-  - type: worker
-    name: praansetu-worker
-    runtime: docker
-    dockerfilePath: ./apps/api/Dockerfile
-    dockerContext: .
-    dockerCommand: celery -A app.workers.celery_app worker --loglevel=info
-    region: singapore
-    plan: starter
-    envVars:
-      - key: APP_ENV
-        value: production
-      - key: DATABASE_URL
-        fromDatabase:
-          name: praansetu-main-db
-          property: connectionString
-      - key: VAULT_DATABASE_URL
-        fromDatabase:
-          name: praansetu-vault-db
-          property: connectionString
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: praansetu-redis
-          property: connectionString
-      - key: CELERY_BROKER_URL
-        fromService:
-          type: redis
-          name: praansetu-redis
-          property: connectionString
-      - key: CELERY_RESULT_BACKEND
-        fromService:
-          type: redis
-          name: praansetu-redis
-          property: connectionString
-      - key: SECRET_KEY
-        fromService:
-          type: web
-          name: praansetu-api
-          envVarKey: SECRET_KEY
-      - key: VAULT_ENCRYPTION_KEY
-        fromService:
-          type: web
-          name: praansetu-api
-          envVarKey: VAULT_ENCRYPTION_KEY
-
-  # ── Celery Beat (Scheduled Jobs Daemon) ────────────────────────
-  - type: worker
-    name: praansetu-beat
-    runtime: docker
-    dockerfilePath: ./apps/api/Dockerfile
-    dockerContext: .
-    dockerCommand: celery -A app.workers.celery_app beat --loglevel=info
-    region: singapore
-    plan: starter
-    envVars:
-      - key: APP_ENV
-        value: production
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: praansetu-redis
-          property: connectionString
-      - key: CELERY_BROKER_URL
-        fromService:
-          type: redis
-          name: praansetu-redis
-          property: connectionString
-      - key: CELERY_RESULT_BACKEND
-        fromService:
-          type: redis
-          name: praansetu-redis
-          property: connectionString
-
-  # ── Redis Key-Value Store ─────────────────────────────────────
-  - type: redis
-    name: praansetu-redis
-    region: singapore
-    plan: starter
-    maxmemoryPolicy: noeviction
-    ipAllowList: []
 
 databases:
-  # ── Main Database ────────────────────────────────────────────
-  - name: praansetu-main-db
-    databaseName: praansetu_main
+  # ── PostgreSQL Database (Free Tier) ──────────────────────────
+  - name: praansetu-db
+    databaseName: praansetu
     user: praansetu
-    plan: starter
-    region: singapore
-
-  # ── Identity Vault Database ──────────────────────────────────
-  - name: praansetu-vault-db
-    databaseName: praansetu_vault
-    user: vault_user
-    plan: starter
+    plan: free
     region: singapore
