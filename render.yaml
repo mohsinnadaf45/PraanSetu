@@ -54,7 +54,7 @@ services:
     runtime: docker
     dockerfilePath: ./apps/api/Dockerfile
     dockerContext: .
-    startCommand: celery -A app.workers.celery_app worker --loglevel=info
+    dockerCommand: celery -A app.workers.celery_app worker --loglevel=info
     region: singapore
     plan: starter
     envVars:
@@ -100,7 +100,7 @@ services:
     runtime: docker
     dockerfilePath: ./apps/api/Dockerfile
     dockerContext: .
-    startCommand: celery -A app.workers.celery_app beat --loglevel=info
+    dockerCommand: celery -A app.workers.celery_app beat --loglevel=info
     region: singapore
     plan: starter
     envVars:
