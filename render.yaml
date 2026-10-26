@@ -1,5 +1,5 @@
 # Render Blueprint: 100% Free Tier Configuration (No Credit Card Required)
-# Deploys PraanSetu API and a managed PostgreSQL database under Render's Free tier.
+# Deploys PraanSetu API as a Free Web Service without hitting the 1-database account limit.
 
 services:
   # ── API Web Service (Free Tier) ───────────────────────────────
@@ -15,22 +15,10 @@ services:
       - key: APP_ENV
         value: production
       - key: DATABASE_URL
-        fromDatabase:
-          name: praansetu-db
-          property: connectionString
+        sync: false
       - key: VAULT_DATABASE_URL
-        fromDatabase:
-          name: praansetu-db
-          property: connectionString
+        sync: false
       - key: SECRET_KEY
         generateValue: true
       - key: VAULT_ENCRYPTION_KEY
         generateValue: true
-
-databases:
-  # ── PostgreSQL Database (Free Tier) ──────────────────────────
-  - name: praansetu-db
-    databaseName: praansetu
-    user: praansetu
-    plan: free
-    region: singapore
