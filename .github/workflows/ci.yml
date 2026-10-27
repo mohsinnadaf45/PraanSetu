@@ -55,10 +55,11 @@ jobs:
 
       - name: Test matching engine
         run: |
-          pytest packages/matching-engine/tests -v
+          cd packages/matching-engine && pytest -v
 
       - name: Test API unit & integration
         env:
+          PYTHONPATH: .
           DATABASE_URL: "postgresql+asyncpg://praansetu:test_password@localhost:5432/praansetu_main_test"
           VAULT_DATABASE_URL: "sqlite+aiosqlite:///:memory:"
           REDIS_URL: "redis://localhost:6379/0"
@@ -66,4 +67,4 @@ jobs:
           SECRET_KEY: "ci-secret-key-for-testing-only-minimum-32-chars-long"
           APP_ENV: "testing"
         run: |
-          pytest apps/api/tests -v
+          cd apps/api && pytest -v
