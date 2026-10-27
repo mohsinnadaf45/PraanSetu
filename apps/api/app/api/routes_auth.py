@@ -1,5 +1,4 @@
 """Auth routes: login (password), MFA verify, refresh, TOTP setup."""
-from __future__ import annotations
 
 from datetime import datetime, timezone
 

@@ -113,7 +113,7 @@ app.add_middleware(
 )
 
 if settings.is_production:
-    app.add_middleware(TrustedHostMiddleware, allowed_hosts=["api.praansetu.in"])
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.ALLOWED_HOSTS)
 
 
 @app.middleware("http")

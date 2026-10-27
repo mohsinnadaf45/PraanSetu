@@ -23,8 +23,9 @@ class Settings(BaseSettings):
     DEBUG: bool = False
 
     ALLOWED_ORIGINS: list[str] = ["http://localhost:3000"]
+    ALLOWED_HOSTS: list[str] = ["api.praansetu.in", "*.onrender.com", "localhost", "127.0.0.1"]
 
-    @field_validator("ALLOWED_ORIGINS", mode="before")
+    @field_validator("ALLOWED_ORIGINS", "ALLOWED_HOSTS", mode="before")
     @classmethod
     def parse_origins(cls, v: str | list) -> list[str]:
         if isinstance(v, str):
