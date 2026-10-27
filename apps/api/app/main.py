@@ -149,7 +149,18 @@ for r in ROUTERS:
     app.include_router(r)
 
 
-# ── Health check ──────────────────────────────────────────────
+# ── Health & Root check ───────────────────────────────────────
+@app.get("/", tags=["root"])
+async def root():
+    return {
+        "status": "healthy",
+        "service": "PraanSetu API",
+        "version": "0.1.0",
+        "env": settings.APP_ENV,
+        "health": "/health",
+    }
+
+
 @app.get("/health", tags=["health"])
 async def health():
     return {"status": "ok", "env": settings.APP_ENV}
