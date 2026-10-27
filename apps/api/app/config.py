@@ -18,7 +18,7 @@ class Settings(BaseSettings):
 
     # ── Application ──────────────────────────────────────────
     APP_ENV: Literal["local", "staging", "pilot", "production"] = "local"
-    APP_HOST: str = "0.0.0.0"
+    APP_HOST: str = "0.0.0.0"  # nosec B104
     APP_PORT: int = 8000
     DEBUG: bool = False
 
