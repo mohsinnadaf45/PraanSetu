@@ -10,10 +10,5 @@
     "build": "npm --prefix apps/web run build",
     "start": "npm --prefix apps/web run start",
     "dev": "npm --prefix apps/web run dev"
-  },
-  "dependencies": {
-    "next": "14.2.16",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
   }
 }
