@@ -59,8 +59,11 @@ limiter = Limiter(key_func=get_remote_address, default_limits=[settings.RATE_LIM
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("startup", env=settings.APP_ENV)
-    # Bootstrap admin user if needed
-    await _bootstrap_admin()
+    # Bootstrap admin user if needed (skipped gracefully if DB is offline or tables not migrated yet)
+    try:
+        await _bootstrap_admin()
+    except Exception as exc:
+        logger.warning("bootstrap_admin_skipped", error=str(exc))
     yield
     logger.info("shutdown")
 
