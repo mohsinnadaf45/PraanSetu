@@ -31,7 +31,11 @@ export default function SignInPage() {
         router.push("/home");
       }
     } catch (err: any) {
-      setError(err?.message || "Invalid credentials. Please verify your email and password.");
+      if (err?.message?.includes("fetch") || err?.name === "TypeError") {
+        setError("Unable to reach PraanSetu API (https://praansetu-api.onrender.com). If the server was idle, it may take ~30s to wake up on Render free tier. Please try again.");
+      } else {
+        setError(err?.message || "Invalid credentials. Please verify your email and password.");
+      }
     } finally {
       setLoading(false);
     }

@@ -32,6 +32,30 @@ class Settings(BaseSettings):
             return [o.strip() for o in v.split(",") if o.strip()]
         return v
 
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def format_database_url(cls, v: str | None) -> str:
+        if not v or not str(v).strip():
+            return "sqlite+aiosqlite:///praansetu_main.db"
+        val = str(v).strip()
+        if val.startswith("postgres://"):
+            return val.replace("postgres://", "postgresql+asyncpg://", 1)
+        if val.startswith("postgresql://") and not val.startswith("postgresql+asyncpg://"):
+            return val.replace("postgresql://", "postgresql+asyncpg://", 1)
+        return val
+
+    @field_validator("VAULT_DATABASE_URL", mode="before")
+    @classmethod
+    def format_vault_database_url(cls, v: str | None) -> str:
+        if not v or not str(v).strip():
+            return "sqlite+aiosqlite:///praansetu_vault.db"
+        val = str(v).strip()
+        if val.startswith("postgres://"):
+            return val.replace("postgres://", "postgresql+asyncpg://", 1)
+        if val.startswith("postgresql://") and not val.startswith("postgresql+asyncpg://"):
+            return val.replace("postgresql://", "postgresql+asyncpg://", 1)
+        return val
+
     # ── Security ─────────────────────────────────────────────
     SECRET_KEY: str = "insecure-dev-key-change-me"
     JWT_ALGORITHM: str = "HS256"
@@ -90,7 +114,7 @@ class Settings(BaseSettings):
 
     # ── Admin Bootstrap ──────────────────────────────────────
     BOOTSTRAP_ADMIN_EMAIL: str = "admin@praansetu.in"
-    BOOTSTRAP_ADMIN_PASSWORD: str = "changeme"
+    BOOTSTRAP_ADMIN_PASSWORD: str = "AdminPass1!"
 
     @property
     def is_production(self) -> bool:

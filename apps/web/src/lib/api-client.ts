@@ -4,7 +4,22 @@
  * Base URL configured via NEXT_PUBLIC_API_URL.
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+export function getApiBaseUrl(): string {
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, "");
+  }
+  if (typeof window !== "undefined") {
+    const host = window.location.hostname;
+    if (host !== "localhost" && host !== "127.0.0.1") {
+      return "https://praansetu-api.onrender.com";
+    }
+  }
+  return process.env.NODE_ENV === "production"
+    ? "https://praansetu-api.onrender.com"
+    : "http://localhost:8000";
+}
+
+const API_BASE_URL = getApiBaseUrl();
 
 export interface ApiErrorResponse {
   detail?: string | { msg?: string }[] | Record<string, unknown>;
@@ -57,7 +72,8 @@ async function fetchWithAuth<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const url = `${API_BASE_URL}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
+  const baseUrl = getApiBaseUrl();
+  const url = `${baseUrl}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
   const headers = new Headers(options.headers || {});
   headers.set("Content-Type", "application/json");
 
@@ -71,7 +87,7 @@ async function fetchWithAuth<T>(
   // Handle Token Refresh on 401 Unauthorized
   if (res.status === 401 && getRefreshToken() && !endpoint.includes("/auth/")) {
     try {
-      const refreshRes = await fetch(`${API_BASE_URL}/auth/refresh`, {
+      const refreshRes = await fetch(`${baseUrl}/auth/refresh`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ refresh_token: getRefreshToken() }),

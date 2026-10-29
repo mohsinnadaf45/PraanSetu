@@ -59,7 +59,21 @@ limiter = Limiter(key_func=get_remote_address, default_limits=[settings.RATE_LIM
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("startup", env=settings.APP_ENV)
-    # Bootstrap admin user if needed (skipped gracefully if DB is offline or tables not migrated yet)
+    # Ensure tables exist
+    try:
+        from app.db.session import engine, vault_engine, Base, VaultBase
+        import app.models.models  # noqa: F401
+        import app.models.vault_models  # noqa: F401
+
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        async with vault_engine.begin() as conn:
+            await conn.run_sync(VaultBase.metadata.create_all)
+        logger.info("db_schema_synced")
+    except Exception as exc:
+        logger.warning("db_schema_sync_skipped", error=str(exc))
+
+    # Bootstrap users if needed
     try:
         await _bootstrap_admin()
     except Exception as exc:
@@ -69,9 +83,9 @@ async def lifespan(app: FastAPI):
 
 
 async def _bootstrap_admin() -> None:
-    """Create initial admin user if no users exist."""
+    """Create initial admin and doctor users if no users exist."""
     from app.db.session import AsyncSessionLocal
-    from app.models.models import AppUser
+    from app.models.models import AppUser, Hospital
     from app.core.security import hash_password
     from sqlalchemy import select, func
 
@@ -79,16 +93,37 @@ async def _bootstrap_admin() -> None:
         count_result = await db.execute(select(func.count()).select_from(AppUser))
         count = count_result.scalar_one()
         if count == 0:
+            hosp_res = await db.execute(select(Hospital).limit(1))
+            hosp = hosp_res.scalar_one_or_none()
+            if not hosp:
+                hosp = Hospital(
+                    name="AIIMS New Delhi",
+                    region="Delhi NCR",
+                    verified=True,
+                )
+                db.add(hosp)
+                await db.flush()
+
             admin = AppUser(
                 email=settings.BOOTSTRAP_ADMIN_EMAIL,
                 hashed_password=hash_password(settings.BOOTSTRAP_ADMIN_PASSWORD),
                 role="admin",
                 mfa_enabled=False,
                 is_active=True,
+                hospital_id=hosp.id,
+            )
+            doctor = AppUser(
+                email="doctor@aiims.gov.in",
+                hashed_password=hash_password("DoctorPass1!"),
+                role="doctor",
+                mfa_enabled=False,
+                is_active=True,
+                hospital_id=hosp.id,
             )
             db.add(admin)
+            db.add(doctor)
             await db.commit()
-            logger.info("bootstrap_admin_created", email=settings.BOOTSTRAP_ADMIN_EMAIL)
+            logger.info("bootstrap_users_created", admin=settings.BOOTSTRAP_ADMIN_EMAIL, doctor="doctor@aiims.gov.in")
 
 
 # ── App ───────────────────────────────────────────────────────
