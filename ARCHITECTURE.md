@@ -53,11 +53,12 @@ This document explains how PraanSetu is built: the big picture, the technology s
 
 | Layer | Choice | Why |
 | --- | --- | --- |
-| Front end | Next.js + TypeScript | Fast pages, strong typing, easy role-based screens |
-| Styling | Tailwind CSS with custom design tokens (no UI kit defaults) | Gives the calm, non-template look in the PRD |
-| Tables and forms | TanStack Table, React Hook Form, Zod | Tables are the core screen; strict form checking |
-| Front end state and data | TanStack Query | Simple server data and caching |
-| Fonts | A serif for headings, a sans for body, a mono for anonymous codes (self-hosted) | Readable, and codes like `R-4F7A91` are easy to compare |
+| Front end | Next.js 14 (App Router) + TypeScript | Fast pages, strong typing, clean server/client boundaries, easy role-based screens |
+| Styling & Surface Design | Tailwind CSS v3 + CSS Variables & custom design tokens (`tokens.ts`, `globals.css`) | Quiet dashboard starter aesthetic: flat surfaces, 1px solid borders (`#E2DED5`), 6px uniform border radius (`rounded-md`), zero heavy shadows/glow/blur for a distraction-free clinical environment |
+| Color System | Custom design tokens: Canvas `#F7F5F0`, Surface `#FFFFFF`, Border `#E2DED5`, Primary text `#1B2430`, Muted text `#5B6572`, Deep Teal accent `#1F5F5B` (hover `#184B48`), Status (Green `#2F7D4F`, Amber `#B7791F`, Red `#B3342E`) | High-contrast WCAG AA/AAA compliant medical palette (contrast ratio >= 4.5:1 for muted, >= 7:1 for primary & accent); avoids harsh saturation while ensuring distinct clinical hierarchy |
+| Tables and forms | TanStack Table, React Hook Form, Zod | Tidy data tables are the core clinical interface; strict schema verification on clinical inputs |
+| Front end state and data | TanStack Query | Simple server state, automatic caching, and optimistic mutations |
+| Fonts & Typography | Self-hosted with `next/font`: **Source Serif 4** (headings), **IBM Plex Sans** (body & tables at 15px), **IBM Plex Mono** (anonymous codes, hashes, ABO blood groups) | Zero external network calls at runtime; high readability; anonymous codes like `R-4F7A91` and SHA-256 hashes are easily distinguishable |
 | API server | Python 3.12 + FastAPI | Clear, fast, automatic API docs |
 | Data checks | Pydantic v2 | Strict input and output rules |
 | Database access | SQLAlchemy 2 + Alembic migrations | Safe queries and versioned schema changes |
@@ -87,9 +88,12 @@ This document explains how PraanSetu is built: the big picture, the technology s
 ## 3. The main parts and what each one does
 
 ### 3.1 Web app (`apps/web`)
-- Screens: Sign in, Home, Donors, Recipients, Match results, Offer detail, Committee review, Audit log, Reports, Admin.
+- Screens: Sign in, Home (Transplant Operations Overview), Donors, Recipients, Match results, Offer detail, Committee review, Audit log, Reports, Admin.
+- Visual Theme & Design: Quiet clinical dashboard aesthetic, flat white surfaces (`#FFFFFF`), warm off-white canvas (`#F7F5F0`), 1px solid borders (`#E2DED5`), 6px uniform border radius (`rounded-md`), deep teal brand accent (`#1F5F5B`), and accessible semantic status tokens (green `#2F7D4F`, amber `#B7791F`, red `#B3342E`).
+- Typography: Self-hosted `Source Serif 4` for headings, `IBM Plex Sans` for body and data tables (15px), and `IBM Plex Mono` for anonymous codes and SHA-256 hashes.
 - Never stores medical data in the browser beyond the current page.
-- Shows "Identity hidden" labels and asks for a reason before any reveal.
+- Shows "Identity hidden" labels and asks for a dual-custody justification before any identity vault decryption.
+
 
 ### 3.2 API server (`apps/api`)
 - Checks login and role on every request.
