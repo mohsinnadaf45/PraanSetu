@@ -42,18 +42,18 @@ export function AuditLogTable({ entries }: { entries: AuditLogEntry[] }) {
                 </span>
               </TableCell>
               <TableCell>
-                <span className="inline-flex items-center gap-1.5 font-medium text-xs text-[#1e3a2f]">
-                  <Shield className="w-3.5 h-3.5 text-[#1e3a2f]" />
+                <span className="inline-flex items-center gap-1.5 font-medium text-xs text-accent">
+                  <Shield className="w-3.5 h-3.5 text-accent" />
                   {entry.action}
                 </span>
               </TableCell>
-              <TableCell className="font-mono text-xs text-stone-500 max-w-xs truncate" title={entry.entry_hash}>
+              <TableCell className="font-mono text-xs text-ink-secondary max-w-xs truncate" title={entry.entry_hash}>
                 {entry.entry_hash.slice(0, 16)}...{entry.entry_hash.slice(-8)}
               </TableCell>
               <TableCell className="text-right">
                 <button
                   onClick={() => setSelectedEntry(entry)}
-                  className="text-xs text-[#1e3a2f] hover:underline font-medium inline-flex items-center gap-1"
+                  className="text-xs text-accent hover:underline font-medium inline-flex items-center gap-1"
                 >
                   <FileText className="w-3.5 h-3.5" />
                   View Payload
@@ -73,15 +73,16 @@ export function AuditLogTable({ entries }: { entries: AuditLogEntry[] }) {
           description={`ID: ${selectedEntry.id}`}
         >
           <div className="space-y-4 text-xs font-mono">
-            <div className="p-3 bg-stone-50 rounded border border-stone-200 space-y-2">
+            <div className="p-3 bg-canvas rounded-md border border-ink-border space-y-2">
               <div>
-                <span className="text-stone-500 block">Actor Code:</span>
-                <span className="font-bold text-stone-900">{selectedEntry.actor_code}</span>
+                <span className="text-ink-secondary block">Actor Code:</span>
+                <span className="font-bold text-ink">{selectedEntry.actor_code}</span>
               </div>
               <div>
-                <span className="text-stone-500 block">Action:</span>
-                <span className="font-bold text-[#1e3a2f]">{selectedEntry.action}</span>
+                <span className="text-ink-secondary block">Action:</span>
+                <span className="font-bold text-accent">{selectedEntry.action}</span>
               </div>
+
               <div>
                 <span className="text-stone-500 block">Timestamp:</span>
                 <span className="text-stone-800">{selectedEntry.time}</span>

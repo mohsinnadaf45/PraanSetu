@@ -59,28 +59,28 @@ function MatchesContent() {
       </div>
 
       {/* Trigger Match Card */}
-      <Card className="bg-[#fbfbf9] border-stone-300">
+      <Card className="bg-canvas border-ink-border">
         <form onSubmit={handleRunMatch} className="space-y-4">
           <div className="flex items-center gap-2">
-            <GitCompare className="w-5 h-5 text-[#1e3a2f]" />
-            <h2 className="font-serif font-bold text-stone-900 text-sm">
+            <GitCompare className="w-5 h-5 text-accent" />
+            <h2 className="font-serif font-bold text-ink text-sm">
               Execute New Clinical Match Run
             </h2>
           </div>
-          <p className="text-xs text-stone-600 max-w-2xl leading-relaxed">
+          <p className="text-xs text-ink-secondary max-w-2xl leading-relaxed">
             Select an available donor organ to execute the deterministic filter and scoring algorithm against all active waitlist recipients. An immutable audit record will be chained instantly upon execution.
           </p>
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3 pt-2">
             <div className="flex-1">
-              <label className="block text-xs font-semibold text-stone-700 mb-1">
+              <label className="block text-xs font-semibold text-ink-secondary mb-1">
                 Select Available Donor Organ
               </label>
               {availableDonors?.items && availableDonors.items.length > 0 ? (
                 <select
                   value={selectedDonorCode}
                   onChange={(e) => setSelectedDonorCode(e.target.value)}
-                  className="w-full text-xs rounded border border-stone-300 py-2 px-3 bg-white text-stone-900 font-mono shadow-2xs focus:ring-1 focus:ring-[#1e3a2f]"
+                  className="w-full text-xs rounded-md border border-ink-border py-2 px-3 bg-surface text-ink font-mono focus:ring-1 focus:ring-accent"
                 >
                   <option value="">-- Choose an available donor code --</option>
                   {availableDonors.items.map((d) => (
@@ -129,7 +129,7 @@ function MatchesContent() {
 
         {isMatchesLoading ? (
           <div className="p-12 text-center bg-white border border-stone-200 rounded-lg">
-            <div className="inline-block w-6 h-6 border-2 border-stone-300 border-t-[#1e3a2f] rounded-full animate-spin mb-2" />
+            <div className="inline-block w-6 h-6 border-2 border-stone-300 border-t-accent rounded-full animate-spin mb-2" />
             <p className="text-xs text-stone-500 font-mono">Loading match run logs...</p>
           </div>
         ) : !matchesData || matchesData.items.length === 0 ? (

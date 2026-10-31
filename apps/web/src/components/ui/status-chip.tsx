@@ -14,25 +14,25 @@ export function StatusChip({ status, className }: StatusChipProps) {
       case "available":
       case "accepted":
       case "approved":
-        return "bg-emerald-50 text-emerald-800 border-emerald-300";
+        return "bg-status-greenBg text-status-green border-status-greenBorder";
       case "waiting":
       case "pending":
       case "offered":
-        return "bg-amber-50 text-amber-800 border-amber-300";
+        return "bg-status-amberBg text-status-amber border-status-amberBorder";
       case "matched":
       case "transplanted":
-        return "bg-sky-50 text-sky-800 border-sky-300";
+        return "bg-accent-light text-accent border-accent-border";
       case "declined":
       case "rejected":
       case "withdrawn":
-        return "bg-rose-50 text-rose-800 border-rose-300";
+        return "bg-status-redBg text-status-red border-status-redBorder";
       case "overridden":
-        return "bg-purple-50 text-purple-800 border-purple-300";
+        return "bg-slate-100 text-ink border-ink-border";
       case "expired":
       case "suspended":
       case "inactive":
       default:
-        return "bg-stone-100 text-stone-600 border-stone-300";
+        return "bg-canvas text-ink-secondary border-ink-border";
     }
   };
 
@@ -43,7 +43,7 @@ export function StatusChip({ status, className }: StatusChipProps) {
   return (
     <span
       className={cn(
-        "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border",
+        "inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border",
         getStyle(),
         className
       )}
@@ -52,4 +52,5 @@ export function StatusChip({ status, className }: StatusChipProps) {
       {formatText(status)}
     </span>
   );
+
 }

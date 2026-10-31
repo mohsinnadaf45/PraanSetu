@@ -84,11 +84,11 @@ export default function CommitteePage() {
       </div>
 
       {/* New Committee Sign-off Card */}
-      <Card className="bg-[#fbfbf9] border-stone-300">
+      <Card className="bg-canvas border-ink-border">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="flex items-center gap-2">
-            <FileSignature className="w-5 h-5 text-[#1e3a2f]" />
-            <h2 className="font-serif font-bold text-stone-900 text-sm">
+            <FileSignature className="w-5 h-5 text-accent" />
+            <h2 className="font-serif font-bold text-ink text-sm">
               Record Committee Formal Determination
             </h2>
           </div>
@@ -152,21 +152,21 @@ export default function CommitteePage() {
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder="Record the consensus findings of the attending transplant surgeons, tissue typing laboratory, and ethics coordinator..."
-              className="w-full text-xs rounded border border-stone-300 p-2.5 text-stone-900 focus:outline-none focus:ring-1 focus:ring-[#1e3a2f]"
+              className="w-full text-xs rounded-md border border-ink-border bg-surface p-2.5 text-ink focus:outline-none focus:ring-1 focus:ring-accent"
               required
             />
           </div>
 
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded text-xs text-red-700 flex items-center gap-2">
+            <div className="p-3 bg-status-redBg border border-status-redBorder rounded-md text-xs text-status-red flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
           {isSuccess && (
-            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded text-xs text-emerald-800 flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <div className="p-3 bg-status-greenBg border border-status-greenBorder rounded-md text-xs text-status-green flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-status-green shrink-0" />
               <span>Committee decision successfully committed and chained to audit trail.</span>
             </div>
           )}
@@ -193,7 +193,7 @@ export default function CommitteePage() {
 
         {isDecisionsLoading ? (
           <div className="p-12 text-center bg-white border border-stone-200 rounded-lg">
-            <div className="inline-block w-6 h-6 border-2 border-stone-300 border-t-[#1e3a2f] rounded-full animate-spin mb-2" />
+            <div className="inline-block w-6 h-6 border-2 border-stone-300 border-t-accent rounded-full animate-spin mb-2" />
             <p className="text-xs text-stone-500 font-mono">Loading decision records...</p>
           </div>
         ) : !decisionsData || decisionsData.items.length === 0 ? (

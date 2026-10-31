@@ -21,25 +21,25 @@ export function WhyThisRankPanel({
   const b = candidate.score_breakdown || {};
 
   return (
-    <div className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white border-l border-stone-200 shadow-2xl flex flex-col animate-in slide-in-from-right duration-200">
+    <div className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-surface border-l border-ink-border shadow-2xl flex flex-col animate-in slide-in-from-right duration-200">
       {/* Header */}
-      <div className="px-6 py-5 border-b border-stone-100 flex items-start justify-between bg-[#fbfbf9]">
+      <div className="px-6 py-5 border-b border-ink-border flex items-start justify-between bg-canvas">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-semibold uppercase tracking-wider text-stone-500">
+            <span className="text-xs font-semibold uppercase tracking-wider text-ink-secondary">
               Ranking Explanation
             </span>
-            <span className="text-xs font-mono px-1.5 py-0.5 rounded bg-stone-200 text-stone-700">
+            <span className="text-xs font-mono px-1.5 py-0.5 rounded bg-canvas border border-ink-border text-ink-secondary">
               Rule {ruleVersionTag}
             </span>
           </div>
-          <h2 className="font-serif text-xl font-bold text-stone-900 flex items-center gap-2">
+          <h2 className="font-serif text-xl font-bold text-ink flex items-center gap-2">
             Rank #{candidate.rank}: <AnonCode code={candidate.recipient_code} />
           </h2>
         </div>
         <button
           onClick={onClose}
-          className="rounded p-1 text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors"
+          className="rounded p-1 text-ink-secondary hover:text-ink hover:bg-canvas transition-colors"
         >
           <X className="w-5 h-5" />
         </button>
@@ -48,23 +48,23 @@ export function WhyThisRankPanel({
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
         {/* Total Score Summary Card */}
-        <div className="p-4 rounded-lg bg-[#e8f0ec] border border-[#c3d9cf] flex items-center justify-between">
+        <div className="p-4 rounded-md bg-accent-light border border-accent-border flex items-center justify-between">
           <div>
-            <p className="text-xs font-medium text-[#1e3a2f] uppercase tracking-wider">
+            <p className="text-xs font-medium text-accent uppercase tracking-wider">
               Total Medical Match Score
             </p>
-            <p className="font-serif text-3xl font-bold text-[#142720]">
+            <p className="font-serif text-3xl font-bold text-accent-hover">
               {(candidate.score * 100).toFixed(1)} / 100
             </p>
           </div>
-          <div className="w-12 h-12 rounded-full bg-white/80 border border-[#c3d9cf] flex items-center justify-center text-[#1e3a2f]">
+          <div className="w-12 h-12 rounded-full bg-surface border border-accent-border flex items-center justify-center text-accent">
             <Award className="w-6 h-6" />
           </div>
         </div>
 
         {/* Plain Language Reasons */}
         <div>
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-stone-600 mb-3">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-ink-secondary mb-3">
             Clinical Decision Factors
           </h3>
           <div className="space-y-2">
@@ -72,14 +72,14 @@ export function WhyThisRankPanel({
               candidate.reasons.map((reason, i) => (
                 <div
                   key={i}
-                  className="p-3 rounded border border-stone-200/90 bg-[#faf9f6] text-sm text-stone-800 leading-snug flex items-start gap-2.5"
+                  className="p-3 rounded-md border border-ink-border bg-canvas/40 text-sm text-ink leading-snug flex items-start gap-2.5"
                 >
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#1e3a2f] mt-1.5 shrink-0" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 shrink-0" />
                   <span>{reason}</span>
                 </div>
               ))
             ) : (
-              <p className="text-xs text-stone-500 italic">No specific override notes recorded.</p>
+              <p className="text-xs text-ink-secondary italic">No specific override notes recorded.</p>
             )}
           </div>
         </div>

@@ -27,22 +27,23 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const baseStyles =
-      "inline-flex items-center justify-center font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400 disabled:pointer-events-none disabled:opacity-50 select-none";
+      "inline-flex items-center justify-center font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent disabled:pointer-events-none disabled:opacity-50 select-none";
 
     const variants = {
       primary:
-        "bg-[#1e3a2f] text-white hover:bg-[#142720] shadow-sm rounded-md",
+        "bg-accent text-white hover:bg-accent-hover rounded-md",
       secondary:
-        "bg-stone-100 text-stone-900 hover:bg-stone-200 border border-stone-200/80 rounded-md",
+        "bg-surface text-ink hover:bg-canvas border border-ink-border rounded-md",
       outline:
-        "bg-transparent border border-stone-300 text-stone-800 hover:bg-stone-50 rounded-md",
+        "bg-surface border border-ink-border text-ink hover:bg-canvas rounded-md",
       ghost:
-        "bg-transparent text-stone-700 hover:bg-stone-100/80 rounded-md",
+        "bg-transparent text-ink-secondary hover:bg-stone-200/50 hover:text-ink rounded-md",
       destructive:
-        "bg-red-700 text-white hover:bg-red-800 shadow-sm rounded-md",
+        "bg-status-red text-white hover:bg-[#992B25] rounded-md",
       subtle:
-        "bg-[#e8f0ec] text-[#1e3a2f] hover:bg-[#d6e5de] font-semibold rounded-md",
+        "bg-accent-light text-accent hover:bg-[#DCEAE7] font-semibold rounded-md",
     };
+
 
     const sizes = {
       sm: "h-8 px-3 text-xs gap-1.5",

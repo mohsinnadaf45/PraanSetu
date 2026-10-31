@@ -31,9 +31,9 @@ export function RankedTable({
 
   return (
     <>
-      <div className="w-full overflow-x-auto rounded-lg border border-stone-200/90 bg-white shadow-subtle">
-        <table className="w-full text-left text-sm text-stone-900 border-collapse">
-          <thead className="border-b border-stone-200 bg-[#fbfbf9] text-xs font-semibold uppercase tracking-wider text-stone-600">
+      <div className="w-full overflow-x-auto rounded-md border border-ink-border bg-surface">
+        <table className="w-full text-left text-sm text-ink border-collapse font-sans">
+          <thead className="border-b border-ink-border bg-canvas text-xs font-semibold uppercase tracking-wider text-ink-secondary">
             <tr>
               <th className="px-4 py-3 w-16 text-center">Rank</th>
               <th className="px-4 py-3">Recipient Code</th>
@@ -42,7 +42,7 @@ export function RankedTable({
               <th className="px-4 py-3 text-right">Decision Support</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-stone-100 font-sans">
+          <tbody className="divide-y divide-ink-border font-sans">
             {candidates.map((c) => {
               const scorePct = Math.round(c.score * 100);
               const isTop = c.rank === 1;
@@ -50,16 +50,16 @@ export function RankedTable({
               return (
                 <tr
                   key={c.recipient_code}
-                  className={`hover:bg-stone-50/70 transition-colors ${
-                    isTop ? "bg-[#fbfcf9]" : ""
+                  className={`hover:bg-canvas/60 transition-colors ${
+                    isTop ? "bg-canvas/30" : ""
                   }`}
                 >
                   <td className="px-4 py-3.5 text-center">
                     <span
                       className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold ${
                         isTop
-                          ? "bg-[#1e3a2f] text-white shadow-xs"
-                          : "bg-stone-100 text-stone-700"
+                          ? "bg-accent text-white"
+                          : "bg-canvas text-ink-secondary border border-ink-border"
                       }`}
                     >
                       #{c.rank}
@@ -69,26 +69,27 @@ export function RankedTable({
                     <div className="flex items-center gap-2">
                       <AnonCode code={c.recipient_code} />
                       {isTop && (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                          <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Primary Candidate
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-status-green bg-status-greenBg px-2 py-0.5 rounded-md border border-status-greenBorder">
+                          <CheckCircle2 className="w-3 h-3 text-status-green" /> Primary Candidate
                         </span>
                       )}
                     </div>
                   </td>
                   <td className="px-4 py-3.5">
                     <div className="flex items-center gap-3">
-                      <div className="w-24 bg-stone-200 rounded-full h-2 overflow-hidden">
+                      <div className="w-24 bg-canvas border border-ink-border rounded-full h-2 overflow-hidden">
                         <div
-                          className="bg-[#1e3a2f] h-2 rounded-full"
+                          className="bg-accent h-2 rounded-full"
                           style={{ width: `${Math.min(scorePct, 100)}%` }}
                         />
                       </div>
-                      <span className="font-mono font-bold text-xs text-stone-900">
+                      <span className="font-mono font-bold text-xs text-ink">
                         {scorePct}/100
                       </span>
                     </div>
                   </td>
-                  <td className="px-4 py-3.5 text-xs text-stone-600 max-w-md truncate">
+                  <td className="px-4 py-3.5 text-xs text-ink-secondary max-w-md truncate">
+
                     {c.reasons && c.reasons.length > 0
                       ? c.reasons.join(" • ")
                       : "Matched according to standard protocol."}

@@ -48,17 +48,17 @@ export function Sidebar() {
   });
 
   return (
-    <aside className="w-64 bg-[#fbfbf9] border-r border-stone-200/90 flex flex-col shrink-0 min-h-screen">
+    <aside className="w-64 bg-canvas border-r border-ink-border flex flex-col shrink-0 min-h-screen">
       {/* Brand Header */}
-      <div className="h-16 px-6 flex items-center border-b border-stone-200/80 gap-3">
-        <div className="w-8 h-8 rounded-md bg-[#1e3a2f] flex items-center justify-center text-white font-serif font-bold text-lg shadow-xs">
+      <div className="h-16 px-6 flex items-center border-b border-ink-border gap-3">
+        <div className="w-8 h-8 rounded-md bg-accent flex items-center justify-center text-white font-serif font-bold text-lg">
           PS
         </div>
         <div>
-          <h1 className="font-serif text-lg font-bold text-stone-900 tracking-tight leading-none">
+          <h1 className="font-serif text-lg font-bold text-ink tracking-tight leading-none">
             PraanSetu
           </h1>
-          <p className="text-[10px] text-stone-500 uppercase tracking-widest mt-0.5">
+          <p className="text-[10px] text-ink-secondary uppercase tracking-widest mt-0.5">
             Bridge of Life
           </p>
         </div>
@@ -76,13 +76,13 @@ export function Sidebar() {
               href={item.href}
               className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                 isActive
-                  ? "bg-[#1e3a2f] text-white shadow-xs"
-                  : "text-stone-700 hover:bg-stone-200/60 hover:text-stone-900"
+                  ? "bg-accent text-white"
+                  : "text-ink-secondary hover:bg-stone-200/50 hover:text-ink"
               }`}
             >
               <Icon
                 className={`w-4 h-4 shrink-0 ${
-                  isActive ? "text-white" : "text-stone-500"
+                  isActive ? "text-white" : "text-ink-secondary"
                 }`}
               />
               <span>{item.name}</span>
@@ -92,15 +92,16 @@ export function Sidebar() {
       </nav>
 
       {/* Regulatory Badge Footer */}
-      <div className="p-4 border-t border-stone-200/80 bg-stone-50/70">
-        <div className="flex items-center gap-2 text-xs text-stone-600 mb-1">
-          <Shield className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
-          <span className="font-semibold text-stone-800">DPDP & NOTTO Guarded</span>
+      <div className="p-4 border-t border-ink-border bg-surface/50">
+        <div className="flex items-center gap-2 text-xs text-ink-secondary mb-1">
+          <Shield className="w-3.5 h-3.5 text-status-green shrink-0" />
+          <span className="font-semibold text-ink">DPDP & NOTTO Guarded</span>
         </div>
-        <p className="text-[11px] text-stone-500 leading-tight">
+        <p className="text-[11px] text-ink-secondary leading-tight">
           All PII isolated in encryption vault. Decisions cryptographically chained.
         </p>
       </div>
     </aside>
   );
+
 }

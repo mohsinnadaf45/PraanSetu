@@ -54,7 +54,7 @@ export default function ReportsPage() {
 
       {isLoading ? (
         <div className="p-16 text-center bg-white border border-stone-200 rounded-lg">
-          <div className="inline-block w-8 h-8 border-2 border-stone-300 border-t-[#1e3a2f] rounded-full animate-spin mb-3" />
+          <div className="inline-block w-8 h-8 border-2 border-stone-300 border-t-accent rounded-full animate-spin mb-3" />
           <p className="text-xs text-stone-500 font-mono">Aggregating fairness distribution metrics...</p>
         </div>
       ) : !report ? (
@@ -220,8 +220,8 @@ export default function ReportsPage() {
           </div>
 
           {/* Compliance & Audit Assurance Footer */}
-          <div className="p-4 bg-[#fbfbf9] rounded-lg border border-stone-200 flex items-start gap-3 text-xs text-stone-600">
-            <ShieldCheck className="w-5 h-5 text-[#1e3a2f] shrink-0 mt-0.5" />
+          <div className="p-4 bg-canvas rounded-md border border-ink-border flex items-start gap-3 text-xs text-ink-secondary">
+            <ShieldCheck className="w-5 h-5 text-accent shrink-0 mt-0.5" />
             <div>
               <p className="font-semibold text-stone-900">NOTTO Regulatory Compliance Assurance</p>
               <p className="mt-0.5 leading-relaxed">

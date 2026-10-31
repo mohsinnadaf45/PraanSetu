@@ -22,12 +22,12 @@ export default function AppLayout({
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-[#fbfbf9]">
+      <div className="flex h-screen items-center justify-center bg-canvas">
         <div className="text-center space-y-2">
-          <div className="w-8 h-8 rounded-md bg-[#1e3a2f] text-white flex items-center justify-center font-serif font-bold text-base mx-auto animate-pulse">
+          <div className="w-8 h-8 rounded-md bg-accent text-white flex items-center justify-center font-serif font-bold text-base mx-auto animate-pulse">
             PS
           </div>
-          <p className="text-xs text-stone-500">Loading authorized session...</p>
+          <p className="text-xs text-ink-secondary">Loading authorized session...</p>
         </div>
       </div>
     );
@@ -38,7 +38,7 @@ export default function AppLayout({
   }
 
   return (
-    <div className="flex min-h-screen bg-[#fbfbf9]">
+    <div className="flex min-h-screen bg-canvas">
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0">
         <Topbar />
@@ -48,4 +48,5 @@ export default function AppLayout({
       </div>
     </div>
   );
+
 }

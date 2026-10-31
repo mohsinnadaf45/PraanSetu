@@ -98,14 +98,15 @@ export function IdentityRevealModal({
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 placeholder="e.g. Recipient matched and accepted; surgical transfer coordination requires verified identity contact."
-                className="w-full text-sm rounded-md border border-stone-300 p-2.5 text-stone-900 focus:outline-none focus:ring-1 focus:ring-[#1e3a2f]"
+                className="w-full text-sm rounded-md border border-ink-border bg-surface p-2.5 text-ink focus:outline-none focus:ring-1 focus:ring-accent"
                 required
               />
             </div>
 
-            {error && <p className="text-xs text-red-600 font-medium">{error}</p>}
+            {error && <p className="text-xs text-status-red font-medium">{error}</p>}
 
-            <div className="flex justify-end gap-2 pt-2 border-t border-stone-100">
+            <div className="flex justify-end gap-2 pt-2 border-t border-ink-border">
+
               <Button type="button" variant="outline" onClick={handleReset} disabled={loading}>
                 Cancel
               </Button>

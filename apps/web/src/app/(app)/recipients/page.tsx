@@ -90,7 +90,7 @@ export default function RecipientsPage() {
               setStatusFilter("");
               setPage(1);
             }}
-            className="text-xs text-[#1e3a2f] hover:underline font-medium ml-auto"
+            className="text-xs text-accent hover:underline font-medium ml-auto"
           >
             Clear Filters
           </button>
@@ -100,9 +100,10 @@ export default function RecipientsPage() {
       {/* Recipients Table */}
       {isLoading ? (
         <div className="p-12 text-center bg-white border border-stone-200 rounded-lg">
-          <div className="inline-block w-6 h-6 border-2 border-stone-300 border-t-[#1e3a2f] rounded-full animate-spin mb-2" />
+          <div className="inline-block w-6 h-6 border-2 border-stone-300 border-t-accent rounded-full animate-spin mb-2" />
           <p className="text-xs text-stone-500 font-mono">Loading recipient waitlist...</p>
         </div>
+
       ) : !data || data.items.length === 0 ? (
         <div className="p-12 text-center bg-white border border-stone-200 rounded-lg">
           <HeartPulse className="w-8 h-8 text-stone-400 mx-auto mb-2" />

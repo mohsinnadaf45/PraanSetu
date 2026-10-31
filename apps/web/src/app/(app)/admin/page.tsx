@@ -121,8 +121,8 @@ export default function AdminPage() {
           onClick={() => setActiveTab("users")}
           className={`flex items-center gap-2 py-2.5 px-4 text-xs font-semibold border-b-2 transition-colors ${
             activeTab === "users"
-              ? "border-[#1e3a2f] text-[#1e3a2f]"
-              : "border-transparent text-stone-500 hover:text-stone-800"
+              ? "border-accent text-accent"
+              : "border-transparent text-ink-secondary hover:text-ink"
           }`}
         >
           <Users className="w-4 h-4" />
@@ -133,8 +133,8 @@ export default function AdminPage() {
           onClick={() => setActiveTab("hospitals")}
           className={`flex items-center gap-2 py-2.5 px-4 text-xs font-semibold border-b-2 transition-colors ${
             activeTab === "hospitals"
-              ? "border-[#1e3a2f] text-[#1e3a2f]"
-              : "border-transparent text-stone-500 hover:text-stone-800"
+              ? "border-accent text-accent"
+              : "border-transparent text-ink-secondary hover:text-ink"
           }`}
         >
           <Building2 className="w-4 h-4" />
@@ -145,8 +145,8 @@ export default function AdminPage() {
           onClick={() => setActiveTab("rules")}
           className={`flex items-center gap-2 py-2.5 px-4 text-xs font-semibold border-b-2 transition-colors ${
             activeTab === "rules"
-              ? "border-[#1e3a2f] text-[#1e3a2f]"
-              : "border-transparent text-stone-500 hover:text-stone-800"
+              ? "border-accent text-accent"
+              : "border-transparent text-ink-secondary hover:text-ink"
           }`}
         >
           <BookOpen className="w-4 h-4" />
@@ -174,7 +174,7 @@ export default function AdminPage() {
 
           {isUsersLoading ? (
             <div className="p-12 text-center bg-white border border-stone-200 rounded-lg">
-              <div className="inline-block w-6 h-6 border-2 border-stone-300 border-t-[#1e3a2f] rounded-full animate-spin mb-2" />
+              <div className="inline-block w-6 h-6 border-2 border-stone-300 border-t-accent rounded-full animate-spin mb-2" />
               <p className="text-xs text-stone-500 font-mono">Loading user registry...</p>
             </div>
           ) : !usersData || usersData.items.length === 0 ? (
@@ -251,7 +251,7 @@ export default function AdminPage() {
 
           {isHospitalsLoading ? (
             <div className="p-12 text-center bg-white border border-stone-200 rounded-lg">
-              <div className="inline-block w-6 h-6 border-2 border-stone-300 border-t-[#1e3a2f] rounded-full animate-spin mb-2" />
+              <div className="inline-block w-6 h-6 border-2 border-stone-300 border-t-accent rounded-full animate-spin mb-2" />
               <p className="text-xs text-stone-500 font-mono">Loading hospital directory...</p>
             </div>
           ) : !hospitalsData || hospitalsData.items.length === 0 ? (
@@ -281,8 +281,8 @@ export default function AdminPage() {
                         {h.region}
                       </TableCell>
                       <TableCell>
-                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Verified Center
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-status-green bg-status-greenBg px-2 py-0.5 rounded-md border border-status-greenBorder">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-status-green" /> Verified Center
                         </span>
                       </TableCell>
                       <TableCell className="font-mono text-xs text-stone-500">
@@ -309,7 +309,7 @@ export default function AdminPage() {
 
           {isRulesLoading ? (
             <div className="p-12 text-center bg-white border border-stone-200 rounded-lg">
-              <div className="inline-block w-6 h-6 border-2 border-stone-300 border-t-[#1e3a2f] rounded-full animate-spin mb-2" />
+              <div className="inline-block w-6 h-6 border-2 border-stone-300 border-t-accent rounded-full animate-spin mb-2" />
               <p className="text-xs text-stone-500 font-mono">Loading rule versions...</p>
             </div>
           ) : !rulesData || rulesData.items.length === 0 ? (
@@ -345,7 +345,7 @@ export default function AdminPage() {
                         {formatDateTime(r.effective_from)}
                       </TableCell>
                       <TableCell>
-                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#1e3a2f] bg-stone-100 px-2 py-0.5 rounded border border-stone-300">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-accent bg-accent-light px-2 py-0.5 rounded-md border border-accent-border">
                           <ShieldCheck className="w-3.5 h-3.5" /> Active Protocol
                         </span>
                       </TableCell>

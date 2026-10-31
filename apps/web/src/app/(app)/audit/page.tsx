@@ -36,8 +36,8 @@ export default function AuditPage() {
       </div>
 
       {/* Chain Explanation Notice */}
-      <div className="p-3.5 bg-stone-50 rounded-lg border border-stone-200 flex items-start gap-3 text-xs text-stone-600">
-        <Lock className="w-4 h-4 text-[#1e3a2f] shrink-0 mt-0.5" />
+      <div className="p-3.5 bg-canvas rounded-md border border-ink-border flex items-start gap-3 text-xs text-ink-secondary">
+        <Lock className="w-4 h-4 text-accent shrink-0 mt-0.5" />
         <div className="leading-relaxed">
           <span className="font-semibold text-stone-900">Cryptographic Invariant:</span> Every log entry computes{" "}
           <code className="text-[11px] font-mono bg-white px-1.5 py-0.5 rounded border border-stone-200 text-stone-800">
@@ -48,7 +48,7 @@ export default function AuditPage() {
       </div>
 
       {/* Filter Bar */}
-      <div className="flex flex-wrap items-center gap-3 p-3 rounded-lg bg-white border border-stone-200/90 shadow-2xs">
+      <div className="flex flex-wrap items-center gap-3 p-3 rounded-md bg-surface border border-ink-border">
         <div className="flex items-center gap-1.5 text-xs font-semibold text-stone-600">
           <Filter className="w-3.5 h-3.5" />
           <span>Filters:</span>
@@ -90,7 +90,7 @@ export default function AuditPage() {
               setActorFilter("");
               setPage(1);
             }}
-            className="text-xs text-[#1e3a2f] hover:underline font-medium ml-auto"
+            className="text-xs text-accent hover:underline font-medium ml-auto"
           >
             Clear Filters
           </button>
@@ -100,7 +100,7 @@ export default function AuditPage() {
       {/* Audit Log Table */}
       {isLoading ? (
         <div className="p-12 text-center bg-white border border-stone-200 rounded-lg">
-          <div className="inline-block w-6 h-6 border-2 border-stone-300 border-t-[#1e3a2f] rounded-full animate-spin mb-2" />
+          <div className="inline-block w-6 h-6 border-2 border-stone-300 border-t-accent rounded-full animate-spin mb-2" />
           <p className="text-xs text-stone-500 font-mono">Loading tamper-evident ledger...</p>
         </div>
       ) : !data || data.items.length === 0 ? (

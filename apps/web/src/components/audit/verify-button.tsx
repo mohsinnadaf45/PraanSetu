@@ -33,7 +33,7 @@ export function VerifyAuditButton() {
         variant="primary"
         onClick={handleVerify}
         isLoading={isPending}
-        className="gap-2 bg-[#1e3a2f] text-white hover:bg-[#142720]"
+        className="gap-2"
       >
         <ShieldCheck className="w-4 h-4" />
         Verify Hash Chain
@@ -43,27 +43,28 @@ export function VerifyAuditButton() {
         <div
           className={`flex items-center gap-2 px-3 py-1.5 rounded-md border text-xs font-medium animate-in fade-in duration-150 ${
             result.valid
-              ? "bg-emerald-50 text-emerald-900 border-emerald-300"
-              : "bg-rose-50 text-rose-900 border-rose-300"
+              ? "bg-status-greenBg text-status-green border-status-greenBorder"
+              : "bg-status-redBg text-status-red border-status-redBorder"
           }`}
         >
           {result.valid ? (
             <>
-              <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
+              <CheckCircle2 className="w-4 h-4 text-status-green shrink-0" />
               <span>
-                <strong>Cryptographic Integrity Verified:</strong> {result.entries_checked} entries checked without tampering.
+                <strong className="text-ink">Cryptographic Integrity Verified:</strong> {result.entries_checked} entries checked without tampering.
               </span>
             </>
           ) : (
             <>
-              <AlertOctagon className="w-4 h-4 text-rose-700 shrink-0" />
+              <AlertOctagon className="w-4 h-4 text-status-red shrink-0" />
               <span>
-                <strong>Chain Broken!</strong> {result.message}
+                <strong className="text-ink">Chain Broken!</strong> {result.message}
               </span>
             </>
           )}
         </div>
       )}
+
     </div>
   );
 }

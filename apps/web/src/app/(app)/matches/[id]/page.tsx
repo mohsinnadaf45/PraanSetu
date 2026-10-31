@@ -22,9 +22,10 @@ export default function MatchDetailPage() {
   if (isLoading) {
     return (
       <div className="p-16 text-center">
-        <div className="inline-block w-8 h-8 border-2 border-stone-300 border-t-[#1e3a2f] rounded-full animate-spin mb-3" />
+        <div className="inline-block w-8 h-8 border-2 border-stone-300 border-t-accent rounded-full animate-spin mb-3" />
         <p className="text-xs text-stone-500 font-mono">Loading match run #{id}...</p>
       </div>
+
     );
   }
 

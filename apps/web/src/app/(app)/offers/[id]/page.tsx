@@ -24,7 +24,7 @@ export default function OfferDetailPage() {
   if (isLoading) {
     return (
       <div className="p-16 text-center">
-        <div className="inline-block w-8 h-8 border-2 border-stone-300 border-t-[#1e3a2f] rounded-full animate-spin mb-3" />
+        <div className="inline-block w-8 h-8 border-2 border-stone-300 border-t-accent rounded-full animate-spin mb-3" />
         <p className="text-xs text-stone-500 font-mono">Loading offer #{id}...</p>
       </div>
     );
@@ -139,7 +139,7 @@ export default function OfferDetailPage() {
       {/* Decision Audit Trail */}
       <Card className="bg-white">
         <h3 className="font-serif font-bold text-sm text-stone-900 mb-3 flex items-center gap-2">
-          <ShieldCheck className="w-4 h-4 text-[#1e3a2f]" />
+          <ShieldCheck className="w-4 h-4 text-accent" />
           Decision History & Audit Trail
         </h3>
 

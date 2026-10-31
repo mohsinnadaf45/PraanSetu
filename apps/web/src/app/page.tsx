@@ -16,13 +16,14 @@ export default function RootPage() {
   }, [router]);
 
   return (
-    <div className="flex h-screen items-center justify-center bg-[#fbfbf9]">
+    <div className="flex h-screen items-center justify-center bg-canvas">
       <div className="text-center space-y-2">
-        <div className="w-10 h-10 rounded-md bg-[#1e3a2f] text-white flex items-center justify-center font-serif font-bold text-xl mx-auto animate-pulse">
+        <div className="w-10 h-10 rounded-md bg-accent text-white flex items-center justify-center font-serif font-bold text-xl mx-auto animate-pulse">
           PS
         </div>
-        <p className="font-serif text-sm font-semibold text-stone-700">Connecting to PraanSetu...</p>
+        <p className="font-serif text-sm font-semibold text-ink">Connecting to PraanSetu...</p>
       </div>
     </div>
   );
+
 }

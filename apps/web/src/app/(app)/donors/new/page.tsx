@@ -94,8 +94,8 @@ export default function NewDonorPage() {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Section 1: Organ & Compatibility */}
           <div>
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-stone-700 mb-3 flex items-center gap-2">
-              <HeartHandshake className="w-4 h-4 text-[#1e3a2f]" />
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-ink-secondary mb-3 flex items-center gap-2">
+              <HeartHandshake className="w-4 h-4 text-accent" />
               Organ & Physiological Parameters
             </h3>
 

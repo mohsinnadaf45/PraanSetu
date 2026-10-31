@@ -128,16 +128,17 @@ export default function HomePage() {
             <span className="text-xs font-semibold uppercase tracking-wider text-stone-500">
               Audit Hash Chain
             </span>
-            <div className="p-2 rounded bg-[#e8f0ec] text-[#1e3a2f]">
+            <div className="p-2 rounded-md bg-accent-light text-accent">
               <ShieldCheck className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-2">
-            <span className="text-sm font-semibold text-emerald-800 flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
+            <span className="text-sm font-semibold text-status-green flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-status-green animate-pulse" />
               Verified Intact
             </span>
-            <p className="text-[11px] text-stone-500 mt-1">SHA-256 chained</p>
+            <p className="text-[11px] text-ink-secondary mt-1">SHA-256 chained</p>
+
           </div>
         </Card>
       </div>
@@ -188,28 +189,28 @@ export default function HomePage() {
               <CardTitle>Available Donors Ready for Matching</CardTitle>
               <CardDescription>Organs currently listed requiring allocation runs</CardDescription>
             </div>
-            <Link href="/donors" className="text-xs text-[#1e3a2f] font-semibold hover:underline">
+            <Link href="/donors" className="text-xs text-accent font-semibold hover:underline">
               View all
             </Link>
           </CardHeader>
 
           {availableDonors.length === 0 ? (
-            <p className="text-xs text-stone-500 py-6 text-center italic">No available donor organs currently listed.</p>
+            <p className="text-xs text-ink-secondary py-6 text-center italic">No available donor organs currently listed.</p>
           ) : (
-            <div className="divide-y divide-stone-100">
+            <div className="divide-y divide-ink-border">
               {availableDonors.map((donor) => (
                 <div key={donor.id} className="py-3 flex items-center justify-between">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       <AnonCode code={donor.donor_code} />
-                      <span className="font-semibold text-xs text-stone-900">
+                      <span className="font-semibold text-xs text-ink">
                         {formatOrganName(donor.organ)}
                       </span>
-                      <span className="text-xs px-1.5 py-0.5 rounded bg-stone-100 text-stone-700 font-mono">
+                      <span className="text-xs px-1.5 py-0.5 rounded-md bg-canvas text-ink-secondary font-mono border border-ink-border">
                         {donor.blood_group}
                       </span>
                     </div>
-                    <p className="text-[11px] text-stone-500">
+                    <p className="text-[11px] text-ink-secondary">
                       {donor.age_years ? `${donor.age_years} yrs` : ""}{" "}
                       {donor.size_kg ? `• ${donor.size_kg} kg` : ""}
                     </p>
@@ -233,33 +234,33 @@ export default function HomePage() {
               <CardTitle>High-Priority Waitlist Candidates</CardTitle>
               <CardDescription>Patients actively waiting for organ matching</CardDescription>
             </div>
-            <Link href="/recipients" className="text-xs text-[#1e3a2f] font-semibold hover:underline">
+            <Link href="/recipients" className="text-xs text-accent font-semibold hover:underline">
               View all
             </Link>
           </CardHeader>
 
           {waitingRecipients.length === 0 ? (
-            <p className="text-xs text-stone-500 py-6 text-center italic">No active waitlist patients listed.</p>
+            <p className="text-xs text-ink-secondary py-6 text-center italic">No active waitlist patients listed.</p>
           ) : (
-            <div className="divide-y divide-stone-100">
+            <div className="divide-y divide-ink-border">
               {waitingRecipients.map((r) => (
                 <div key={r.id} className="py-3 flex items-center justify-between">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       <AnonCode code={r.recipient_code} />
-                      <span className="font-semibold text-xs text-stone-900">
+                      <span className="font-semibold text-xs text-ink">
                         {formatOrganName(r.organ)}
                       </span>
-                      <span className="text-xs px-1.5 py-0.5 rounded bg-stone-100 text-stone-700 font-mono">
+                      <span className="text-xs px-1.5 py-0.5 rounded-md bg-canvas text-ink-secondary font-mono border border-ink-border">
                         {r.blood_group}
                       </span>
                     </div>
-                    <p className="text-[11px] text-stone-500">
+                    <p className="text-[11px] text-ink-secondary">
                       Listed: {formatDateTime(r.listed_at)}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-status-amberBg text-status-amber border border-status-amberBorder">
                       Urgency Tier {r.urgency}
                     </span>
                     <StatusChip status={r.status} />
@@ -272,14 +273,14 @@ export default function HomePage() {
       </div>
 
       {/* Real-time Audit Verification Section */}
-      <Card className="bg-[#fbfbf9] border-stone-200">
+      <Card className="bg-canvas border-ink-border">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h3 className="font-serif text-base font-bold text-stone-900 flex items-center gap-2">
-              <ShieldCheck className="w-5 h-5 text-emerald-700" />
+            <h3 className="font-serif text-base font-bold text-ink flex items-center gap-2">
+              <ShieldCheck className="w-5 h-5 text-status-green" />
               Cryptographic Audit Chain Integrity
             </h3>
-            <p className="text-xs text-stone-500 mt-1 max-w-xl">
+            <p className="text-xs text-ink-secondary mt-1 max-w-xl">
               Every donor listing, match calculation, and clinical decision is permanently appended with SHA-256 hash chaining.
               Auditors and clinicians can mathematically verify zero tampering at any moment.
             </p>
@@ -287,6 +288,7 @@ export default function HomePage() {
           <VerifyAuditButton />
         </div>
       </Card>
+
     </div>
   );
 }

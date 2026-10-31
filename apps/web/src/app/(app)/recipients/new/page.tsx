@@ -94,8 +94,8 @@ export default function NewRecipientPage() {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Section 1: Clinical Compatibility & Urgency */}
           <div>
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-stone-700 mb-3 flex items-center gap-2">
-              <HeartPulse className="w-4 h-4 text-[#1e3a2f]" />
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-ink-secondary mb-3 flex items-center gap-2">
+              <HeartPulse className="w-4 h-4 text-accent" />
               Clinical & Urgency Parameters
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -194,9 +194,9 @@ export default function NewRecipientPage() {
           </div>
 
           {/* Section 3: Identity Vault Fields */}
-          <div className="pt-4 border-t border-stone-200 bg-stone-50/50 p-4 rounded-lg border">
+          <div className="pt-4 border-t border-ink-border bg-canvas/50 p-4 rounded-md border border-ink-border">
             <div className="flex items-start gap-2.5 mb-3">
-              <Shield className="w-4 h-4 text-[#1e3a2f] shrink-0 mt-0.5" />
+              <Shield className="w-4 h-4 text-accent shrink-0 mt-0.5" />
               <div>
                 <h3 className="text-xs font-semibold text-stone-900">
                   Dual-Custody Vault Registration (Optional)

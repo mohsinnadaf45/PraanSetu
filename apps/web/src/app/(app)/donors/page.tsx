@@ -89,10 +89,11 @@ export default function DonorsPage() {
               setStatusFilter("");
               setPage(1);
             }}
-            className="text-xs text-[#1e3a2f] hover:underline font-medium ml-auto"
+            className="text-xs text-accent hover:underline font-medium ml-auto"
           >
             Clear Filters
           </button>
+
         )}
       </div>
 
